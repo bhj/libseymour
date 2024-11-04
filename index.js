@@ -1,8 +1,6 @@
 /*
   v1.0 - working
 
-  This library requires the underscore library found at http://documentcloud.github.com/underscore/ 
-  This library requires the underscore string library found at http://edtsech.github.com/underscore.string/
   This library requires the support of a localStorage Wrapper I made, however updates could be easily made to change that.
 
   On Terminology: the API is a little confusing on what it calls things so I made it simple for myself and have set these definitions.
@@ -11,17 +9,13 @@
     LABEL - a folder/label/category that contains feeds.
     TAGS - the states applied to individual items (read, starred, etc.)
     ITEM - an individual article
-
 */
 
 /* jslint adsafe: false, devel: true, regexp: true, browser: true, vars: true, nomen: true, maxerr: 50, indent: 4 */
-/* global localStorage, window, reader, _ */
+/* global localStorage, window, reader */
 
 (function () {
   "use strict";
-
-  //we need the underscore string lib
-  _.mixin(_.string.exports());
 
   window.reader = {};
   
@@ -114,7 +108,7 @@
               //for some requests, you can send the same keys sequentially ex: ?i=2&s=dog&i=4&s=cat ...
               //we support this, but you have to pass the keys that get listed multiple times as a set array of objects.
               //set: [{i: 2, s: "dog"}, {i: 4, s: "cat"}];
-              _.each(objectToSearch[key], function(singleSet){
+              objectToSearch[key].forEach((singleSet) => {
                 getQueries(singleSet);
               });
             } else {
@@ -226,8 +220,8 @@
       },
       onSuccess: function (transport) {
         //this is what authorizes every action the user takes
-        readerAuth.set(_.lines(transport.responseText)[2].replace("Auth=", ""));
-        
+        readerAuth.set(transport.responseText.split('\n')[2].replace("Auth=", ""));
+
         getUserInfo(successCallback, failCallback);
   
       },
@@ -753,10 +747,10 @@
       params.r = reader.TAGS[tag];      
     }
 
-    if(_.isArray(itemId) && _.isArray(subscriptionId)){
+    if(Array.isArray(itemId) && Array.isArray(subscriptionId)){
       params.set = [];
-      _.each(itemId, function(singleItemId, index){
-        params.set.push({i: singleItemId, s: subscriptionId[index]});
+      itemId.forEach((singleItemId, index) => {
+        params.set.push({ i: singleItemId, s: subscriptionId[index] });
       });
     } else {
       params.s = subscriptionId;
