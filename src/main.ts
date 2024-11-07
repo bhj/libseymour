@@ -34,7 +34,7 @@
   reader.has_loaded_prefs = false;
 
   //constants that will only be used in this file 
-  var CLIENT = "Tibfib", //put your own string here
+  const CLIENT = "Tibfib", //put your own string here
     //base urls
     LOGIN_URL = "https://www.google.com/accounts/ClientLogin", 
     BASE_URL = "http://www.google.com/reader/api/0/",
@@ -53,7 +53,7 @@
     RENAME_LABEL_SUFFIX = "rename-tag",
     EDIT_TAG_SUFFIX = "edit-tag";
 
-  var readerFeeds = [], //we want to be able to get/set our feeds outside of this file
+  let readerFeeds = [], //we want to be able to get/set our feeds outside of this file
     readerAuth = new localStorageWrapper("Auth"), //no interface outside of this file
     readerUser = new localStorageWrapper("User"); //can get from outside of file 
 
@@ -73,7 +73,7 @@
 
 
   //the core ajax function, you won't need to use this directly
-  var readerToken = "",
+  let readerToken = "",
     requests = [],
     makeRequest = function (obj, noAuth) {
       //make sure we have a method and a parameters object
@@ -96,7 +96,7 @@
       }
       
       //turn our parameters object into a query string
-      var queries = [], 
+      let queries = [], 
         key, 
         queryString;
 
@@ -125,9 +125,9 @@
       
       //for get requests, attach the queryString
       //for post requests, attach just the client constant
-      var url = (obj.method === "GET") ? (obj.url + "?" + queryString) : (obj.url + "?" + encodeURIComponent("client") + "=" + encodeURIComponent(CLIENT));
+      const url = (obj.method === "GET") ? (obj.url + "?" + queryString) : (obj.url + "?" + encodeURIComponent("client") + "=" + encodeURIComponent(CLIENT));
         
-      var request = new XMLHttpRequest();
+      const request = new XMLHttpRequest();
       request.open(obj.method, url, true);
 
       //set request header
@@ -139,7 +139,7 @@
         request.setRequestHeader("Authorization", "GoogleLogin auth=" + readerAuth.get());
       }
 
-      var requestIndex = requests.length;
+      const requestIndex = requests.length;
       request.onreadystatechange = function () {
         if ((request.readyState === 4) && request.status === 200) {
           if (obj.onSuccess) {
@@ -173,7 +173,7 @@
 
             //Humane is a notification lib. (yes this is bad practice, but easier than checking for this on every fail callback) 
             if (humane) {
-              var newHumane = humane.create();
+              const newHumane = humane.create();
               newHumane.log(request.statusText + ". " + "Try logging in again.",  {timeout: 2000, clickToClose: false});
             } else {
               console.error("AUTH EXPIRED? TRY LOGGING IN AGAIN");
@@ -285,7 +285,7 @@
     });      
   };
 
-  var getUserPreferences = function (successCallback, failCallback) {
+  const getUserPreferences = function (successCallback, failCallback) {
     makeRequest({
       method: "GET",
       url: BASE_URL + PREFERENCES_PATH,
@@ -373,14 +373,14 @@
 
   //organizes feeds based on labels.
   var organizeFeeds = function (feeds, inLabels, unreadCounts, userPrefs) {
-    var unlabeled = [], 
+    const unlabeled = [], 
       labels = _(inLabels).reject(function(label){
         return reader.correctId(label.id) === "user/-/state/com.google/broadcast" || reader.correctId(label.id) === "user/-/state/com.blogger/blogger-following";
       });
 
     labels.unshift({title: "All", id: reader.TAGS["reading-list"], feeds: feeds, isAll: true, isSpecial: true});
 
-    var labelTitleRegExp = /[^\/]+$/i;
+    const labelTitleRegExp = /[^\/]+$/i;
     _(labels).each(function (label) {
       
       label.title = label.title || labelTitleRegExp.exec(label.id)[0];
@@ -434,7 +434,7 @@
           label.id = reader.correctId(label.id);
           _(labels).each(function (fullLabel) {
             if (label.id === fullLabel.id) {
-              var feed_clone = _(feed).clone();
+              const feed_clone = _(feed).clone();
                 feed_clone.inside = fullLabel.id;
 
               fullLabel.feeds.push(feed_clone);
@@ -453,14 +453,14 @@
     });
 
     //remove labels with no feeds
-    var labelsWithFeeds = _(labels).reject(function (label) {
+    const labelsWithFeeds = _(labels).reject(function (label) {
       return (label.feeds.length === 0 && !label.isSpecial);
     });
 
     //order the feeds within labels
     _(labelsWithFeeds).each(function (label) {
       //get the ordering id based on the userPrefs
-      var orderingId = _(userPrefs[label.id]).detect(function (setting) {
+      const orderingId = _(userPrefs[label.id]).detect(function (setting) {
         return (setting.id === "subscription-ordering");
       });
       if (orderingId) {
@@ -480,13 +480,13 @@
     });
 
     //now order ALL feeds and labels
-    var orderingId = _(userPrefs["user/-/state/com.google/root"]).detect(function (setting) {
+    const orderingId = _(userPrefs["user/-/state/com.google/root"]).detect(function (setting) {
       return (setting.id === "subscription-ordering");
     }) || {value: ""};
     
 
     //our subscriptions are our labelsWithFeeds + our unlabeled feeds
-    var subscriptions = [].concat(labelsWithFeeds, unlabeled);
+    let subscriptions = [].concat(labelsWithFeeds, unlabeled);
       //sort them by sortid
       subscriptions = _(subscriptions).sortBy(function (subscription) {
         if (orderingId.value.indexOf(subscription.sortid) === -1 && !subscription.isSpecial) {
@@ -504,9 +504,9 @@
     makeRequest({
       url: BASE_URL + UNREAD_SUFFIX,
       onSuccess: function (transport) {
-        var unreadCounts = JSON.parse(transport.responseText).unreadcounts;
+        const unreadCounts = JSON.parse(transport.responseText).unreadcounts;
         //console.log(transport);
-        var unreadCountsObj = {};
+        const unreadCountsObj = {};
         _(unreadCounts).each(function (obj) {
           unreadCountsObj[reader.correctId(obj.id)] = obj.count;
         });
@@ -531,7 +531,7 @@
   // *
   // *************************************
 
-  var editFeed = function (params, successCallback, failCallback) {
+  const editFeed = function (params, successCallback, failCallback) {
     if (!params) {
       console.error("No params for feed edit");
       return;
@@ -563,7 +563,7 @@
   reader.editFeedLabel = function (feedId, label, opt, successCallback, failCallback) {
     //label needs to have reader.TAGS["label"] prepended.
 
-    var obj = {
+    const obj = {
       ac: "edit",
       s: feedId
     };
@@ -638,7 +638,7 @@
   };
 
   // This function searches Google's feed API to find RSS feeds.
-  var readerUrlRegex = /(http|ftp|https):\/\/[\w\-_]+(\.[\w\-_]+)+([\w\-\.,@?\^=%&amp;:\/~\+#]*[\w\-\@?\^=%&amp;\/~\+#])?/;
+  const readerUrlRegex = /(http|ftp|https):\/\/[\w\-_]+(\.[\w\-_]+)+([\w\-\.,@?\^=%&amp;:\/~\+#]*[\w\-\@?\^=%&amp;\/~\+#])?/;
   reader.processFeedInput = function (input, successCallback, failCallback) {
     if (readerUrlRegex.test(input)) {
       makeRequest({
@@ -648,7 +648,7 @@
           v: "1.0"        
         },
         onSuccess: function (transport) {
-          var response = JSON.parse(transport.responseText);
+          const response = JSON.parse(transport.responseText);
           if (response.responseStatus === 200) {
             successCallback({isFeed: true, title: response.responseData.feed.title})
           } else {
@@ -678,7 +678,7 @@
         v: "1.0"        
       },
       onSuccess: function (transport) {
-        var response = JSON.parse(transport.responseText);
+        const response = JSON.parse(transport.responseText);
         if (response.responseStatus === 200) {
           if (response.responseData.entries) {
             successCallback({results: response.responseData.entries}, "keyword");
@@ -701,7 +701,7 @@
   // *************************************
 
   reader.getItems = function (feedUrl, successCallback, opts) {
-    var params = opts || {n: 50};
+    const params = opts || {n: 50};
       params.r = params.r || "d";
       
     makeRequest({
@@ -736,7 +736,7 @@
 
     //WARNING: The API seems to fail when you try and change the tags of more than ~100 items.
 
-    var params = {
+    const params = {
       async: "true",
       ac: "edit-tags"
     };
@@ -782,17 +782,17 @@
   // *************************************
   
   //this function replaces the number id with a dash. Helpful for comparison
-  var readerIdRegExp = /user\/\d*\//;
+  const readerIdRegExp = /user\/\d*\//;
   reader.correctId = function (id) {
     return id.replace(readerIdRegExp, "user\/-\/");
   };
 
-  var trueRegExp = /^true$/i;
+  const trueRegExp = /^true$/i;
   reader.isRead = function (article) {
     if(article.read !== undefined){
       return trueRegExp.test(article.read);
     }
-    for (var i = 0; i < article.categories.length; i++) {
+    for (let i = 0; i < article.categories.length; i++) {
       if(reader.correctId(article.categories[i]) === reader.TAGS['read']){
         return true;
       }
@@ -805,7 +805,7 @@
     if(article.starred !== undefined){
       return trueRegExp.test(article.starred);
     }
-    for (var i = 0; i < article.categories.length; i++) {
+    for (let i = 0; i < article.categories.length; i++) {
       if(reader.correctId(article.categories[i]) === reader.TAGS['star']){
         return true;
       }
@@ -821,7 +821,7 @@
 
   //normalizes error response for logging in
   reader.normalizeError = function (inErrorResponse) {
-    var errorMessage = _(inErrorResponse).lines()[0].replace("Error=", "").replace(/(\w)([A-Z])/g, "$1 $2");
+    let errorMessage = _(inErrorResponse).lines()[0].replace("Error=", "").replace(/(\w)([A-Z])/g, "$1 $2");
     errorMessage = (errorMessage === "Bad Authentication") ? "Incorrect Email/Password" : errorMessage;
     return errorMessage;
   };
