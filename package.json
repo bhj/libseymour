@@ -1,0 +1,30 @@
+{
+  "name": "seymour",
+  "version": "0.0.0-dev.0",
+  "description": "",
+  "type": "module",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "scripts": {
+    "dev": "webpack serve --static src --open",
+    "lint": "eslint .",
+    "lint:fix": "npm run lint -- --fix",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "license": "ISC",
+  "devDependencies": {
+    "@eslint/js": "^9.14.0",
+    "@types/eslint__js": "^8.42.3",
+    "eslint": "^9.14.0",
+    "globals": "^15.12.0",
+    "typescript": "^5.6.3",
+    "typescript-eslint": "^8.13.0",
+    "webpack": "^5.96.1",
+    "webpack-cli": "^5.1.4",
+    "webpack-dev-server": "^5.1.0"
+  }
+}
