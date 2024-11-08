@@ -53,9 +53,9 @@
     RENAME_LABEL_SUFFIX = "rename-tag",
     EDIT_TAG_SUFFIX = "edit-tag";
 
-  let readerFeeds = [], //we want to be able to get/set our feeds outside of this file
-    readerAuth = new localStorageWrapper("Auth"), //no interface outside of this file
-    readerUser = new localStorageWrapper("User"); //can get from outside of file 
+  let readerFeeds = []; //we want to be able to get/set our feeds outside of this file
+  const readerAuth = new localStorageWrapper("Auth"); //no interface outside of this file
+  const readerUser = new localStorageWrapper("User"); //can get from outside of file 
 
   reader.setFeeds = function (feeds) {
     readerFeeds = feeds;  
@@ -74,9 +74,10 @@
 
 
   //the core ajax function, you won't need to use this directly
-  let readerToken = "",
-    requests = [],
-    makeRequest = function (obj, noAuth) {
+  let readerToken = "";
+  const requests = [];
+
+  const makeRequest = function (obj, noAuth) {
       //make sure we have a method and a parameters object
       obj.method = obj.method || "GET";
       obj.parameters = obj.parameters || {};
@@ -97,13 +98,11 @@
       }
       
       //turn our parameters object into a query string
-      let queries = [], 
-        key, 
-        queryString;
+      const queries = []; 
 
       function getQueries(objectToSearch){
-        for (key in objectToSearch) {
-          if (objectToSearch.hasOwnProperty(key)) {
+        for (const key in objectToSearch) {
+          if (Object.hasOwn(objectToSearch, key)) {
             //console.log("key", key);
             if(key === "set"){
               //for some requests, you can send the same keys sequentially ex: ?i=2&s=dog&i=4&s=cat ...
@@ -120,10 +119,8 @@
       }
 
       getQueries(obj.parameters);
-      
-      queryString = queries.join("&");
+      const queryString = queries.join("&");
 
-      
       //for get requests, attach the queryString
       //for post requests, attach just the client constant
       const url = (obj.method === "GET") ? (obj.url + "?" + queryString) : (obj.url + "?" + encodeURIComponent("client") + "=" + encodeURIComponent(CLIENT));
@@ -257,7 +254,7 @@
   };
 
   //Gets the user info, an object of data. Needed for our other requests.
-  var getUserInfo = function (successCallback, failCallback) {
+  const getUserInfo = function (successCallback, failCallback) {
     makeRequest({
       method: "GET",
       url: BASE_URL + USERINFO_SUFFIX,
@@ -373,7 +370,7 @@
 
     labels.unshift({title: "All", id: reader.TAGS["reading-list"], feeds: feeds, isAll: true, isSpecial: true});
 
-    const labelTitleRegExp = /[^\/]+$/i;
+    const labelTitleRegExp = /[^/]+$/i;
     
     labels.forEach(function (label) {
       label.title = label.title || labelTitleRegExp.exec(label.id)[0];
@@ -632,7 +629,7 @@
   };
 
   // This function searches Google's feed API to find RSS feeds.
-  const readerUrlRegex = /(http|ftp|https):\/\/[\w\-_]+(\.[\w\-_]+)+([\w\-\.,@?\^=%&amp;:\/~\+#]*[\w\-\@?\^=%&amp;\/~\+#])?/;
+  const readerUrlRegex = /(http|ftp|https):\/\/[\w\-_]+(\.[\w\-_]+)+([\w\-.,@?^=%&amp;:/~+#]*[\w\-@?^=%&amp;/~+#])?/;
   reader.processFeedInput = function (input, successCallback, failCallback) {
     if (readerUrlRegex.test(input)) {
       makeRequest({
@@ -778,7 +775,7 @@
   //this function replaces the number id with a dash. Helpful for comparison
   const readerIdRegExp = /user\/\d*\//;
   reader.correctId = function (id) {
-    return id.replace(readerIdRegExp, "user\/-\/");
+    return id.replace(readerIdRegExp, "user/-/");
   };
 
   const trueRegExp = /^true$/i;
@@ -836,7 +833,7 @@ localStorageWrapper.prototype.get = function () {
 
   try {
     return JSON.parse(localStorage[this.key]);
-  } catch(e) {
+  } catch {
      return localStorage[this.key];
   }
 }
@@ -844,7 +841,7 @@ localStorageWrapper.prototype.get = function () {
 localStorageWrapper.prototype.set = function (value) {
   try {
     localStorage[this.key] = (typeof value === "string") ? value : JSON.stringify(value);
-  } catch (e){
+  } catch {
     console.error("Error Saving to localStorage");
   }
 }
