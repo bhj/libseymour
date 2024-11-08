@@ -64,7 +64,8 @@
     return readerFeeds;
   };
   reader.getLabels = function () {
-    return _(reader.getFeeds()).select(function (feed) { return feed.isLabel; });
+    return reader.getFeeds().filter(feed => feed.isLabel);
+
   };
   reader.getUser = function () {
     //readerUser is an object with user info like the user's email address.
@@ -348,7 +349,7 @@
     }
   };
 
-  var loadLabels = function (successCallback) {
+  const loadLabels = function (successCallback) {
     makeRequest({
       method: "GET",
       url: BASE_URL + TAGS_PATH + LIST_SUFFIX,
@@ -364,22 +365,23 @@
   };
 
   //organizes feeds based on labels.
-  var organizeFeeds = function (feeds, inLabels, unreadCounts, userPrefs) {
-    const unlabeled = [], 
-      labels = _(inLabels).reject(function(label){
-        return reader.correctId(label.id) === "user/-/state/com.google/broadcast" || reader.correctId(label.id) === "user/-/state/com.blogger/blogger-following";
-      });
+  const organizeFeeds = function (feeds, inLabels, unreadCounts, userPrefs) {
+    const unlabeled = [];
+    const labels = inLabels.filter(label => 
+        reader.correctId(label.id) !== "user/-/state/com.google/broadcast" && 
+        reader.correctId(label.id) !== "user/-/state/com.blogger/blogger-following"
+      );
 
     labels.unshift({title: "All", id: reader.TAGS["reading-list"], feeds: feeds, isAll: true, isSpecial: true});
 
     const labelTitleRegExp = /[^\/]+$/i;
-    _(labels).each(function (label) {
-      
+    
+    labels.forEach(function (label) {
       label.title = label.title || labelTitleRegExp.exec(label.id)[0];
 
       //based on title add unique properties
       if (label.title === "starred") {
-        label.title = _(label.title).capitalize();
+        label.title = label.title.charAt(0).toUpperCase() + label.title.slice(1).toLowerCase();
         label.isSpecial = true;
       } else if (!label.isSpecial) {
         label.isLabel = true;
@@ -391,7 +393,7 @@
       label.id = reader.correctId(label.id);
 
       //apply unreadCounts
-      _(unreadCounts).each(function (unreadCount) {
+      unreadCounts.forEach(function (unreadCount) {
         unreadCount.id = reader.correctId(unreadCount.id);
 
         if (label.id === unreadCount.id) {
@@ -402,7 +404,7 @@
     });
 
     //process feeds
-    _(feeds).each(function (feed) {
+    feeds.forEach(function (feed) {
       //give isFeed property, useful for identifying
       feed.isFeed = true;
 
@@ -410,7 +412,7 @@
       feed.id = reader.correctId(feed.id);
 
       //apply unread counts
-      _(unreadCounts).each(function (unreadCount) {
+      unreadCounts.forEach(function (unreadCount) {
         if (feed.id === unreadCount.id) {
           feed.count = unreadCount.count;
           feed.newestItemTimestamp = unreadCount.newestItemTimestampUsec;  
@@ -422,12 +424,13 @@
         unlabeled.push(feed);
       } else {
         //otherwise find the label from the labels array and push the feed into its feeds array
-        _(feed.categories).each(function (label) {
+        feed.categories.forEach(function (label) {
           label.id = reader.correctId(label.id);
-          _(labels).each(function (fullLabel) {
+
+          labels.forEach(function (fullLabel) {
             if (label.id === fullLabel.id) {
-              const feed_clone = _(feed).clone();
-                feed_clone.inside = fullLabel.id;
+              const feed_clone = { ...feed };
+              feed_clone.inside = fullLabel.id;
 
               fullLabel.feeds.push(feed_clone);
             }
@@ -438,60 +441,60 @@
     });
 
     //replace digits
-    _(userPrefs).each(function (value, key) {
+    userPrefs.forEach(function (value, key) {
       if (/user\/\d*\//.test(key)) {
         userPrefs[reader.correctId(key)] = value;
       }
     });
 
     //remove labels with no feeds
-    const labelsWithFeeds = _(labels).reject(function (label) {
-      return (label.feeds.length === 0 && !label.isSpecial);
-    });
+    const labelsWithFeeds = labels.filter(label => label.feeds.length !== 0 || label.isSpecial);
 
     //order the feeds within labels
-    _(labelsWithFeeds).each(function (label) {
+    labelsWithFeeds.forEach(function (label) {
       //get the ordering id based on the userPrefs
-      const orderingId = _(userPrefs[label.id]).detect(function (setting) {
-        return (setting.id === "subscription-ordering");
-      });
+      const orderingId = userPrefs[label.id].find(setting => setting.id === "subscription-ordering");
+
       if (orderingId) {
-        label.feeds = _(label.feeds).sortBy(function (feed) {
-          if (orderingId.value.indexOf(feed.sortid) === -1) {
-            //if our sortid isn't there, the feed should be at the back.
-            return 1000;
-          }
+        label.feeds = label.feeds.sort((feedA, feedB) => {
+          const indexA = orderingId.value.indexOf(feedA.sortid);
+          const indexB = orderingId.value.indexOf(feedB.sortid);
+        
           //return the index of our feed sortid, which will be in multiples of 8 since sortid's are 8 characters long.
-          return (orderingId.value.indexOf(feed.sortid)) / 8;
-        });  
-      }  //there might be another setting we should follow like "alphabetical" or "most recent". Just a guess. 
+          const rankA = indexA === -1 ? 1000 : indexA / 8;
+          const rankB = indexB === -1 ? 1000 : indexB / 8;
+        
+          return rankA - rankB;
+        });
+      } 
+      //there might be another setting we should follow like "alphabetical" or "most recent". Just a guess.
       /*else {
         labels.feeds.sort();
       }*/
-      
     });
 
     //now order ALL feeds and labels
-    const orderingId = _(userPrefs["user/-/state/com.google/root"]).detect(function (setting) {
-      return (setting.id === "subscription-ordering");
-    }) || {value: ""};
+    const orderingId = userPrefs["user/-/state/com.google/root"].find(setting => setting.id === "subscription-ordering") || { value: "" };
     
-
     //our subscriptions are our labelsWithFeeds + our unlabeled feeds
     let subscriptions = [].concat(labelsWithFeeds, unlabeled);
-      //sort them by sortid
-      subscriptions = _(subscriptions).sortBy(function (subscription) {
-        if (orderingId.value.indexOf(subscription.sortid) === -1 && !subscription.isSpecial) {
-          return 1000;
-        }
-        return (orderingId.value.indexOf(subscription.sortid)) / 8;
-      });
+
+    //sort them by sortid
+    subscriptions = subscriptions.sort((subA, subB) => {
+      const indexA = orderingId.value.indexOf(subA.sortid);
+      const indexB = orderingId.value.indexOf(subB.sortid);
+    
+      const rankA = (indexA === -1 && !subA.isSpecial) ? 1000 : indexA / 8;
+      const rankB = (indexB === -1 && !subB.isSpecial) ? 1000 : indexB / 8;
+    
+      return rankA - rankB;
+    });
 
     return subscriptions;
   };
 
   //get unread counts from google reader
-  var getUnreadCounts = function (successCallback, returnObject) {
+  const getUnreadCounts = function (successCallback, returnObject) {
     //passing true for returnObject gets you an object useful for notifications
     makeRequest({
       url: BASE_URL + UNREAD_SUFFIX,
@@ -499,7 +502,7 @@
         const unreadCounts = JSON.parse(transport.responseText).unreadcounts;
         //console.log(transport);
         const unreadCountsObj = {};
-        _(unreadCounts).each(function (obj) {
+        unreadCounts.forEach(function (obj) {
           unreadCountsObj[reader.correctId(obj.id)] = obj.count;
         });
         reader.unreadCountsObj = unreadCountsObj;
@@ -813,7 +816,10 @@
 
   //normalizes error response for logging in
   reader.normalizeError = function (inErrorResponse) {
-    let errorMessage = _(inErrorResponse).lines()[0].replace("Error=", "").replace(/(\w)([A-Z])/g, "$1 $2");
+    let errorMessage = inErrorResponse.split('\n')[0]
+      .replace("Error=", "")
+      .replace(/(\w)([A-Z])/g, "$1 $2");
+
     errorMessage = (errorMessage === "Bad Authentication") ? "Incorrect Email/Password" : errorMessage;
     return errorMessage;
   };
