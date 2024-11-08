@@ -169,15 +169,7 @@
             }
           }
           if (request.status === 401 && request.statusText === "Unauthorized") {
-            //This probably means your Auth expired. The user needs to log in again.
-
-            //Humane is a notification lib. (yes this is bad practice, but easier than checking for this on every fail callback) 
-            if (humane) {
-              const newHumane = humane.create();
-              newHumane.log(request.statusText + ". " + "Try logging in again.",  {timeout: 2000, clickToClose: false});
-            } else {
-              console.error("AUTH EXPIRED? TRY LOGGING IN AGAIN");
-            }
+            console.error("AUTH EXPIRED? TRY LOGGING IN AGAIN");
           }
 
           console.error("Request Failed: " + request);
