@@ -133,7 +133,6 @@
 
       //set request header
       request.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-      request.setRequestHeader('Cookie', '');
 
       if (readerAuth.get() && !noAuth) {
         //this one is important. This is how google does authorization.
