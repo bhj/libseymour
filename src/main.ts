@@ -620,64 +620,6 @@
     }, successCallback)
   }
 
-  // This function searches Google's feed API to find RSS feeds.
-  const readerUrlRegex = /(http|ftp|https):\/\/[\w\-_]+(\.[\w\-_]+)+([\w\-.,@?^=%&amp;:/~+#]*[\w\-@?^=%&amp;/~+#])?/
-  reader.processFeedInput = function (input, successCallback, failCallback) {
-    if (readerUrlRegex.test(input)) {
-      makeRequest({
-        url: 'https://ajax.googleapis.com/ajax/services/feed/load',
-        parameters: {
-          q: encodeURI(input),
-          v: '1.0',
-        },
-        onSuccess: function (transport) {
-          const response = JSON.parse(transport.responseText)
-          if (response.responseStatus === 200) {
-            successCallback({ isFeed: true, title: response.responseData.feed.title })
-          }
-          else {
-            reader.searchForFeeds(input, successCallback, failCallback)
-          }
-        },
-        onFailure: function (transport) {
-          console.error(transport)
-        },
-      }, true)
-    }
-    else {
-      reader.searchForFeeds(input, successCallback, failCallback)
-    }
-  }
-
-  reader.searchForFeeds = function (input, successCallback, failCallback) {
-    // remove http://
-    // remove path
-    // remove TLD
-    input = input.replace(/(http:\/\/|https:\/\/)/ig, '').split('/')[0].replace(/\.\w{1,3}\.*\w{0,2}$/ig, '')
-
-    makeRequest({
-      url: 'https://ajax.googleapis.com/ajax/services/feed/find',
-      parameters: {
-        q: encodeURI(input),
-        v: '1.0',
-      },
-      onSuccess: function (transport) {
-        const response = JSON.parse(transport.responseText)
-        if (response.responseStatus === 200) {
-          if (response.responseData.entries) {
-            successCallback({ results: response.responseData.entries }, 'keyword')
-          }
-        }
-        else {
-          failCallback(response.responseDetails)
-        }
-      },
-      onFailure: function (transport) {
-        console.error(transport)
-      },
-    }, true)
-  }
-
   // *************************************
   // *
   // *  Loading Items
