@@ -1,8 +1,4 @@
 /*
-  v1.0 - working
-
-  This library requires the support of a localStorage Wrapper I made, however updates could be easily made to change that.
-
   On Terminology: the API is a little confusing on what it calls things so I made it simple for myself and have set these definitions.
     SUBSCRIPTION - either a label or a feed subscription
     FEED - an individual site's rss feed
@@ -11,16 +7,26 @@
     ITEM - an individual article
 */
 
-/* jslint adsafe: false, devel: true, regexp: true, browser: true, vars: true, nomen: true, maxerr: 50, indent: 4 */
-/* global localStorage, window, reader */
+class Reader {
+  private static CLIENT = 'libseymour'
 
-(function () {
-  'use strict'
+  private static PATH_BASE = '/reader/api/0/'
+  private static PATH_AUTH = '/accounts/ClientLogin'
+  private static PATH_PREFERENCES = 'preference/stream/list'
+  private static PATH_STREAM = 'stream/contents/'
+  private static PATH_SUBSCRIPTIONS = 'subscription/'
+  private static PATH_TAGS = 'tag/'
 
-  window.reader = {}
+  private static SUFFIX_LIST = 'list'
+  private static SUFFIX_EDIT = 'edit'
+  private static SUFFIX_MARK_ALL_READ = 'mark-all-as-read'
+  private static SUFFIX_TOKEN = 'token'
+  private static SUFFIX_USER_INFO = 'user-info'
+  private static SUFFIX_UNREAD = 'unread-count'
+  private static SUFFIX_RENAME_LABEL = 'rename-tag'
+  private static SUFFIX_EDIT_TAG = 'edit-tag'
 
-  // global constants that will likely be used outside of this file
-  reader.TAGS = {
+  private static TAGS = {
     'like': 'user/-/state/com.google/like',
     'label': 'user/-/label/',
     'star': 'user/-/state/com.google/starred',
@@ -30,6 +36,178 @@
     'kept-unread': 'user/-/state/com.google/kept-unread',
     'reading-list': 'user/-/state/com.google/reading-list',
   }
+
+  private url: string
+  private urlAuth: string
+  private tokenAuth: string
+  private tokenPost: string
+  private client: string
+
+  constructor(config) {
+    if (!config.url) throw new Error('url is required')
+
+    this.url = config.url + Reader.PATH_BASE
+    this.urlAuth = config.url + Reader.PATH_AUTH
+    this.client = config.client || Reader.CLIENT
+  }
+
+  private req = async function (obj, noAuth = false) {
+    const headers = {}
+    obj.method = obj.method || 'GET'
+    obj.parameters = obj.parameters || {}
+
+    // add default parameters for GET requests
+    if (obj.method === 'GET') {
+      Object.assign(obj.parameters, {
+        ck: Date.now(),
+        accountType: 'GOOGLE',
+        service: 'reader',
+        output: 'json',
+        client: this.client,
+      })
+    }
+
+    // post token is required for (most) POST requests
+    if (obj.method === 'POST' && this.tokenPost) {
+      obj.parameters.T = this.tokenPost
+    }
+
+    // remove undefined params and make sure they're strings
+    const params = new URLSearchParams(
+      Object.entries(obj.parameters)
+        .filter(([, val]) => val !== undefined)
+        .map(([key, val]) => [key, String(val)]),
+    )
+
+    const url = obj.method === 'GET'
+      ? `${obj.url}?${params.toString()}`
+      : `${obj.url}?client=${encodeURIComponent(this.client)}`
+
+    // add Authorization header if necessary
+    if (this.tokenAuth && !noAuth) {
+      headers['Authorization'] = `GoogleLogin auth=${this.tokenAuth}`
+    }
+
+    const res = await fetch(url, {
+      method: obj.method,
+      headers,
+      body: obj.method === 'POST' ? params : null,
+    })
+
+    if (res.ok) {
+      if (obj.type === 'json') return res.json()
+      if (obj.type === 'text') return res.text()
+      return res
+    }
+
+    if (obj.method === 'POST' && !obj.isRetry && (res.status === 400 || res.status === 401)) {
+      console.log(`got ${res.status}; requesting token`)
+      await this.getPostToken()
+
+      console.log('got token; retrying request')
+      return this.req({
+        ...obj,
+        isRetry: true,
+      })
+    }
+  }
+
+  public async getAuthToken(username: string, password: string) {
+    if (!username || !password) {
+      throw new Error('missing username or password')
+    }
+
+    const res = await fetch(this.urlAuth, {
+      method: 'POST',
+      body: new URLSearchParams({
+        Email: username,
+        Passwd: password,
+      }),
+    })
+
+    const body = await res.text()
+    if (!res.ok) throw new Error(body)
+
+    const token = body.split('\n')[2].replace('Auth=', '')
+    this.setAuthToken(token)
+    return token
+  }
+
+  public setAuthToken(token: string) {
+    this.tokenAuth = token
+  }
+
+  public async getPostToken() {
+    if (!this.tokenAuth) throw new Error('auth token required')
+
+    const res = await fetch(this.url + Reader.SUFFIX_TOKEN, {
+      method: 'GET',
+      headers: {
+        Authorization: `GoogleLogin auth=${this.tokenAuth}`,
+      },
+    })
+
+    const body = await res.text()
+    if (!res.ok) throw new Error(body)
+
+    this.setPostToken(body)
+    return body
+  }
+
+  public setPostToken(token: string) {
+    this.tokenPost = token
+  }
+
+  public async getFeeds() {
+    return await this.req({
+      url: this.url + Reader.PATH_SUBSCRIPTIONS + Reader.SUFFIX_LIST,
+      type: 'json',
+    })
+  }
+
+  public async getLabels() {
+    const res = await this.req({
+      url: this.url + Reader.PATH_TAGS + Reader.SUFFIX_LIST,
+      type: 'json',
+    })
+
+    return res.tags
+  }
+
+  public async getUnread() {
+    const res = await this.req({
+      url: this.url + Reader.SUFFIX_UNREAD,
+      type: 'json',
+    })
+
+    return res.unreadcounts
+  }
+
+  public async getUserInfo() {
+    return await this.req({
+      url: this.url + Reader.SUFFIX_USER_INFO,
+      type: 'json',
+    })
+  }
+
+  public async setAllRead(streamId: string, timestamp?: number) {
+    if (!streamId) throw new Error('streamId required')
+
+    const res = await this.req({
+      method: 'POST',
+      url: this.url + Reader.SUFFIX_MARK_ALL_READ,
+      parameters: {
+        s: streamId,
+        ts: timestamp,
+      },
+      type: 'text',
+    })
+
+    return res
+  }
+}
+
+export default Reader
   // global variables
   reader.has_loaded_prefs = false
 
