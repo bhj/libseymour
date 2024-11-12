@@ -22,6 +22,7 @@ export default tseslint.config(
       },
     },
     rules: {
+      '@stylistic/brace-style': ['error', '1tbs', { allowSingleLine: true }],
       '@stylistic/space-before-function-paren': ['error', 'always'],
     },
   },

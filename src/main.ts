@@ -108,6 +108,9 @@ class Reader {
         ...obj,
         isRetry: true,
       })
+    } else {
+      const body = await res.text()
+      throw new ApiError(body, res.status)
     }
   }
 
@@ -125,7 +128,7 @@ class Reader {
     })
 
     const body = await res.text()
-    if (!res.ok) throw new Error(body)
+    if (!res.ok) throw new ApiError(body, res.status)
 
     const token = body.split('\n')[2].replace('Auth=', '')
     this.setAuthToken(token)
@@ -147,7 +150,7 @@ class Reader {
     })
 
     const body = await res.text()
-    if (!res.ok) throw new Error(body)
+    if (!res.ok) throw new ApiError(body, res.status)
 
     this.setPostToken(body)
     return body
@@ -207,6 +210,17 @@ class Reader {
 }
 
 export default Reader
+
+class ApiError extends Error {
+  public status: number
+
+  constructor (message: string, status: number) {
+    super(message)
+    this.status = status
+    this.name = 'ApiError'
+  }
+}
+
   reader.getLabels = function () {
     return reader.getFeeds().filter(feed => feed.isLabel)
   }
