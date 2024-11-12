@@ -208,45 +208,8 @@ class Reader {
 }
 
 export default Reader
-  // global variables
-  reader.has_loaded_prefs = false
-
-  // constants that will only be used in this file
-  const CLIENT = 'Tibfib', // put your own string here
-    // base urls
-    LOGIN_URL = '',
-    BASE_URL = '',
-    // url paths
-    PREFERENCES_PATH = 'preference/stream/list',
-    STREAM_PATH = 'stream/contents/',
-    SUBSCRIPTIONS_PATH = 'subscription/',
-    TAGS_PATH = 'tag/',
-    // url actions
-    LIST_SUFFIX = 'list',
-    EDIT_SUFFIX = 'edit',
-    MARK_ALL_READ_SUFFIX = 'mark-all-as-read',
-    TOKEN_SUFFIX = 'token',
-    USERINFO_SUFFIX = 'user-info',
-    UNREAD_SUFFIX = 'unread-count',
-    RENAME_LABEL_SUFFIX = 'rename-tag',
-    EDIT_TAG_SUFFIX = 'edit-tag'
-
-  let readerFeeds = [] // we want to be able to get/set our feeds outside of this file
-  const readerAuth = new localStorageWrapper('Auth') // no interface outside of this file
-  const readerUser = new localStorageWrapper('User') // can get from outside of file
-
-  reader.setFeeds = function (feeds) {
-    readerFeeds = feeds
-  }
-  reader.getFeeds = function () {
-    return readerFeeds
-  }
   reader.getLabels = function () {
     return reader.getFeeds().filter(feed => feed.isLabel)
-  }
-  reader.getUser = function () {
-    // readerUser is an object with user info like the user's email address.
-    return readerUser
   }
 
   // the core ajax function, you won't need to use this directly
@@ -361,91 +324,6 @@ export default Reader
   // *  Authentication
   // *
   // *************************************
-
-  // First order of business is to check for the Auth Header.
-  // If it exists, call getToken();
-  // If it doesn't, prompt the user for their username/password
-  reader.hasAuth = function () {
-    if (readerAuth.get()) {
-      return true
-    }
-  }
-
-  // Get our auth header; saved to localStorage.
-  reader.login = function (email, password, successCallback, failCallback) {
-    if (email.length === 0 || password.length === 0) {
-      failCallback('Blank Info...')
-      return
-    }
-    makeRequest({
-      method: 'GET',
-      url: LOGIN_URL,
-      parameters: {
-        Email: email,
-        Passwd: password,
-      },
-      onSuccess: function (transport) {
-        // this is what authorizes every action the user takes
-        readerAuth.set(transport.responseText.split('\n')[2].replace('Auth=', ''))
-        console.log('login success', transport)
-        getUserInfo(successCallback, failCallback)
-      },
-      onFailure: function (transport) {
-        console.error(transport)
-        // failCallback(reader.normalizeError(transport.responseText));
-      },
-    })
-  }
-
-  // Gets our token for POST requests; saved to localStorage;.
-  // If it fails, your auth header has expired and you need to have the user login again.
-  reader.getToken = function (successCallback, failCallback) {
-    makeRequest({
-      method: 'GET',
-      url: BASE_URL + TOKEN_SUFFIX,
-      parameters: {},
-      onSuccess: function (transport) {
-        readerToken = transport.responseText
-        successCallback()
-      },
-      onFailure: function (transport) {
-        console.error('failed', transport)
-        if (failCallback) {
-          failCallback(reader.normalizeError(transport.responseText))
-        }
-      },
-    })
-  }
-
-  // Logout the user
-  reader.logout = function () {
-    // delete localStorage.Auth;
-    readerAuth.del()
-    // delete localStorage.User;
-    readerUser.del()
-
-    reader.setFeeds([])
-  }
-
-  // Gets the user info, an object of data. Needed for our other requests.
-  const getUserInfo = function (successCallback, failCallback) {
-    makeRequest({
-      method: 'GET',
-      url: BASE_URL + USERINFO_SUFFIX,
-      parameters: {},
-      onSuccess: function (transport) {
-        readerUser.set(JSON.parse(transport.responseText))
-
-        successCallback()
-      },
-      onFailure: function (transport) {
-        console.error(transport)
-        if (failCallback) {
-          failCallback(reader.normalizeError(transport.responseText))
-        }
-      },
-    })
-  }
 
   const getUserPreferences = function (successCallback, failCallback) {
     makeRequest({
@@ -917,49 +795,4 @@ export default Reader
 
     return false
   }
-
-  // returns url for image to use in the icon
-  reader.getIconForFeed = function (feedUrl) {
-    return 'http://www.google.com/s2/favicons?domain_url=' + encodeURIComponent(feedUrl)
-  }
-
-  // normalizes error response for logging in
-  reader.normalizeError = function (inErrorResponse) {
-    let errorMessage = inErrorResponse.split('\n')[0]
-      .replace('Error=', '')
-      .replace(/(\w)([A-Z])/g, '$1 $2')
-
-    errorMessage = (errorMessage === 'Bad Authentication') ? 'Incorrect Email/Password' : errorMessage
-    return errorMessage
-  }
-}())
-
-function localStorageWrapper(key) {
-  this.key = key
-}
-
-localStorageWrapper.prototype.get = function () {
-  if (!localStorage[this.key]) {
-    return
-  }
-
-  try {
-    return JSON.parse(localStorage[this.key])
-  }
-  catch {
-    return localStorage[this.key]
-  }
-}
-
-localStorageWrapper.prototype.set = function (value) {
-  try {
-    localStorage[this.key] = (typeof value === 'string') ? value : JSON.stringify(value)
-  }
-  catch {
-    console.error('Error Saving to localStorage')
-  }
-}
-
-localStorageWrapper.prototype.del = function () {
-  delete localStorage[this.key]
 }
