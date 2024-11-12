@@ -158,8 +158,8 @@ class Reader {
     this.tokenPost = token
   }
 
-  public async getFeeds () {
-    return await this.req({
+  public getFeeds () {
+    return this.req({
       url: this.url + Reader.PATH_SUBSCRIPTIONS + Reader.SUFFIX_LIST,
       type: 'json',
     })
@@ -183,8 +183,8 @@ class Reader {
     return res.unreadcounts
   }
 
-  public async getUserInfo () {
-    return await this.req({
+  public getUserInfo () {
+    return this.req({
       url: this.url + Reader.SUFFIX_USER_INFO,
       type: 'json',
     })
