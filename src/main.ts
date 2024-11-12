@@ -12,7 +12,6 @@ class Reader {
 
   private static PATH_BASE = '/reader/api/0/'
   private static PATH_AUTH = '/accounts/ClientLogin'
-  private static PATH_PREFERENCES = 'preference/stream/list'
   private static PATH_STREAM = 'stream/contents/'
   private static PATH_SUBSCRIPTIONS = 'subscription/'
   private static PATH_TAGS = 'tag/'
@@ -317,33 +316,6 @@ export default Reader
 
     request.send((obj.method === 'POST') ? queryString : '')
     requests.push(request)
-  }
-
-  // *************************************
-  // *
-  // *  Authentication
-  // *
-  // *************************************
-
-  const getUserPreferences = function (successCallback, failCallback) {
-    makeRequest({
-      method: 'GET',
-      url: BASE_URL + PREFERENCES_PATH,
-      parameters: {},
-      onSuccess: function (transport) {
-        reader.has_loaded_prefs = true
-        reader.userPrefs = JSON.parse(transport.responseText).streamprefs
-        if (successCallback) {
-          successCallback()
-        }
-      },
-      onFailure: function (transport) {
-        console.error(transport)
-        if (failCallback) {
-          failCallback(reader.normalizeError(transport.responseText))
-        }
-      },
-    })
   }
 
   // *************************************
