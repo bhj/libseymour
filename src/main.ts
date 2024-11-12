@@ -43,7 +43,7 @@ class Reader {
   private tokenPost: string
   private client: string
 
-  constructor(config) {
+  constructor (config) {
     if (!config.url) throw new Error('url is required')
 
     this.url = config.url + Reader.PATH_BASE
@@ -112,7 +112,7 @@ class Reader {
     }
   }
 
-  public async getAuthToken(username: string, password: string) {
+  public async getAuthToken (username: string, password: string) {
     if (!username || !password) {
       throw new Error('missing username or password')
     }
@@ -133,11 +133,11 @@ class Reader {
     return token
   }
 
-  public setAuthToken(token: string) {
+  public setAuthToken (token: string) {
     this.tokenAuth = token
   }
 
-  public async getPostToken() {
+  public async getPostToken () {
     if (!this.tokenAuth) throw new Error('auth token required')
 
     const res = await fetch(this.url + Reader.SUFFIX_TOKEN, {
@@ -154,18 +154,18 @@ class Reader {
     return body
   }
 
-  public setPostToken(token: string) {
+  public setPostToken (token: string) {
     this.tokenPost = token
   }
 
-  public async getFeeds() {
+  public async getFeeds () {
     return await this.req({
       url: this.url + Reader.PATH_SUBSCRIPTIONS + Reader.SUFFIX_LIST,
       type: 'json',
     })
   }
 
-  public async getLabels() {
+  public async getLabels () {
     const res = await this.req({
       url: this.url + Reader.PATH_TAGS + Reader.SUFFIX_LIST,
       type: 'json',
@@ -174,7 +174,7 @@ class Reader {
     return res.tags
   }
 
-  public async getUnread() {
+  public async getUnread () {
     const res = await this.req({
       url: this.url + Reader.SUFFIX_UNREAD,
       type: 'json',
@@ -183,14 +183,14 @@ class Reader {
     return res.unreadcounts
   }
 
-  public async getUserInfo() {
+  public async getUserInfo () {
     return await this.req({
       url: this.url + Reader.SUFFIX_USER_INFO,
       type: 'json',
     })
   }
 
-  public async setAllRead(streamId: string, timestamp?: number) {
+  public async setAllRead (streamId: string, timestamp?: number) {
     if (!streamId) throw new Error('streamId required')
 
     const res = await this.req({

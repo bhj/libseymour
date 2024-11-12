@@ -21,5 +21,8 @@ export default tseslint.config(
         ...globals.browser,
       },
     },
+    rules: {
+      '@stylistic/space-before-function-paren': ['error', 'always'],
+    },
   },
 )
