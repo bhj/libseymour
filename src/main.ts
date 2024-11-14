@@ -7,6 +7,21 @@
     ITEM - an individual article
 */
 
+interface IFeedItemOpts {
+  /** Continuation key from a previous request, used to fetch the next batch. API param='c' */
+  continuation?: string
+  /** Exclude a streamId. API param='xt' */
+  exclude?: string
+  /** Exclude items newer than this UNIX timestamp (s); API param='nt' */
+  maxTime?: number
+  /** Exclude items older than this UNIX timestamp (s); API param='ot' */
+  minTime?: number
+  /** Number of items per request. Default=50; API param='n' */
+  num?: number
+  /** Date sort order. Default='desc'; API param='r' */
+  sort?: 'asc' | 'desc'
+}
+
 class Reader {
   private static CLIENT = 'libseymour'
 
@@ -163,6 +178,22 @@ class Reader {
   public getFeeds () {
     return this.req({
       url: this.url + Reader.PATH_SUBSCRIPTIONS + Reader.SUFFIX_LIST,
+      type: 'json',
+    })
+
+  public getFeedItems (feedId: string, opts: IFeedItemOpts = {}) {
+    const params = {
+      c: opts.continuation || undefined,
+      n: typeof opts.num === 'number' ? opts.num : 50,
+      r: opts.sort === 'asc' ? 'o' : 'd',
+      xt: opts.exclude || undefined,
+      ot: typeof opts.minTime == 'number' ? opts.minTime : undefined,
+      nt: typeof opts.maxTime == 'number' ? opts.maxTime : undefined,
+    }
+
+    return this.req({
+      url: this.url + Reader.PATH_STREAM + encodeURIComponent(feedId),
+      parameters: params,
       type: 'json',
     })
   }
