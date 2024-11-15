@@ -22,6 +22,11 @@ interface IFeedItemOpts {
   sort?: 'asc' | 'desc'
 }
 
+interface IAllReadOpts {
+  /** Exclude items newer than this timestamp (microseconds); API param='ts' */
+  usMax?: number
+}
+
 class Reader {
   private static CLIENT = 'libseymour'
 
@@ -223,20 +228,20 @@ class Reader {
     })
   }
 
-  public async setAllRead (streamId: string, timestamp?: number) {
+  public async setAllRead (streamId: string, opts: IAllReadOpts = {}) {
     if (!streamId) throw new Error('streamId required')
 
-    const res = await this.req({
+    const params = {
+      s: streamId,
+      ts: typeof opts.usMax == 'number' ? opts.usMax : undefined,
+    }
+
+    return this.req({
       method: 'POST',
       url: this.url + Reader.SUFFIX_MARK_ALL_READ,
-      parameters: {
-        s: streamId,
-        ts: timestamp,
-      },
+      parameters: params,
       type: 'text',
     })
-
-    return res
   }
 }
 
