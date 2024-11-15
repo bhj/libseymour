@@ -79,8 +79,6 @@ class Reader {
     if (obj.method === 'GET') {
       Object.assign(obj.parameters, {
         ck: Date.now(),
-        accountType: 'GOOGLE',
-        service: 'reader',
         output: 'json',
         client: this.client,
       })
