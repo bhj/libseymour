@@ -12,10 +12,10 @@ interface IFeedItemOpts {
   continuation?: string
   /** Exclude a streamId. API param='xt' */
   exclude?: string
-  /** Exclude items newer than this UNIX timestamp (s); API param='nt' */
-  maxTime?: number
-  /** Exclude items older than this UNIX timestamp (s); API param='ot' */
-  minTime?: number
+  /** Exclude items newer than this timestamp (seconds); API param='nt' */
+  sMax?: number
+  /** Exclude items older than this timestamp (seconds); API param='ot' */
+  sMin?: number
   /** Number of items per request. Default=50; API param='n' */
   num?: number
   /** Date sort order. Default='desc'; API param='r' */
@@ -187,8 +187,8 @@ class Reader {
       n: typeof opts.num === 'number' ? opts.num : 50,
       r: opts.sort === 'asc' ? 'o' : 'd',
       xt: opts.exclude || undefined,
-      ot: typeof opts.minTime == 'number' ? opts.minTime : undefined,
-      nt: typeof opts.maxTime == 'number' ? opts.maxTime : undefined,
+      ot: typeof opts.sMin == 'number' ? opts.sMin : undefined,
+      nt: typeof opts.sMax == 'number' ? opts.sMax : undefined,
     }
 
     return this.req({
