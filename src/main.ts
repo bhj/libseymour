@@ -180,11 +180,14 @@ class Reader {
     this.tokenPost = token
   }
 
-  public getFeeds () {
-    return this.req({
+  public async getFeeds () {
+    const res = await this.req({
       url: this.url + Reader.PATH_SUBSCRIPTIONS + Reader.SUFFIX_LIST,
       type: 'json',
     })
+
+    return res.subscriptions
+  }
 
   public getFeedItems (feedId: string, opts: IFeedItemOpts = {}) {
     const params = {
