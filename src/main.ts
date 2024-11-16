@@ -70,63 +70,58 @@ class Reader {
     this.client = config.client || Reader.CLIENT
   }
 
-  private req = async function (obj, noAuth = false) {
-    const headers = {}
-    obj.method = obj.method || 'GET'
-    obj.parameters = obj.parameters || {}
-
-    // add default parameters for GET requests
-    if (obj.method === 'GET') {
-      Object.assign(obj.parameters, {
-        ck: Date.now(),
-        output: 'json',
-        client: this.client,
-      })
+  private req = async function ({ isRetry = false, method = 'GET', headers = {}, params = {}, url, type }, noAuth = false) {
+    if (this.tokenAuth && !noAuth) {
+      headers['Authorization'] = `GoogleLogin auth=${this.tokenAuth}`
     }
 
-    // post token is required for (most) POST requests
-    if (obj.method === 'POST' && this.tokenPost) {
-      obj.parameters.T = this.tokenPost
-    }
-
-    const params = obj.parameters instanceof URLSearchParams
-      ? obj.parameters
+    const searchParams = params instanceof URLSearchParams
+      ? params
       : new URLSearchParams(
-        Object.entries(obj.parameters)
+        Object.entries(params)
           // remove undefined properties and make sure they're strings
           .filter(([, val]) => val !== undefined)
           .map(([key, val]) => [key, String(val)]),
       )
 
-    const url = obj.method === 'GET'
-      ? `${obj.url}?${params.toString()}`
-      : `${obj.url}?client=${encodeURIComponent(this.client)}`
+    // add default parameters for GET requests
+    if (method === 'GET') {
+      searchParams.append('ck', Date.now().toString())
+      searchParams.append('output', 'json')
+      searchParams.append('client', this.client)
 
-    // add Authorization header if necessary
-    if (this.tokenAuth && !noAuth) {
-      headers['Authorization'] = `GoogleLogin auth=${this.tokenAuth}`
+      url = `${url}?${searchParams.toString()}`
+    } else if (method === 'POST') {
+      // post token is required for (most) POST requests
+      if (this.tokenPost) searchParams.append('T', this.tokenPost)
+
+      url = `${url}?client=${encodeURIComponent(this.client)}`
     }
 
     const res = await fetch(url, {
-      method: obj.method,
+      method,
       headers,
-      body: obj.method === 'POST' ? params : null,
+      body: method === 'POST' ? searchParams : null,
     })
 
     if (res.ok) {
-      if (obj.type === 'json') return res.json()
-      if (obj.type === 'text') return res.text()
+      if (type === 'json') return res.json()
+      if (type === 'text') return res.text()
       return res
     }
 
-    if (obj.method === 'POST' && !obj.isRetry && (res.status === 400 || res.status === 401)) {
+    if (method === 'POST' && !isRetry && (res.status === 400 || res.status === 401)) {
       console.log(`got ${res.status}; requesting token`)
       await this.getPostToken()
 
       console.log('got token; retrying request')
       return this.req({
-        ...obj,
         isRetry: true,
+        method,
+        headers,
+        params,
+        url,
+        type,
       })
     } else {
       const body = await res.text()
@@ -201,7 +196,7 @@ class Reader {
 
     return this.req({
       url: this.url + Reader.PATH_STREAM + encodeURIComponent(feedId),
-      parameters: params,
+      params,
       type: 'json',
     })
   }
@@ -242,7 +237,7 @@ class Reader {
     return this.req({
       method: 'POST',
       url: this.url + Reader.SUFFIX_MARK_ALL_READ,
-      parameters: params,
+      params,
       type: 'text',
     })
   }
@@ -261,7 +256,7 @@ class Reader {
     return this.req({
       method: 'POST',
       url: this.url + Reader.SUFFIX_EDIT_TAG,
-      parameters: params,
+      params,
       type: 'text',
     })
   }
