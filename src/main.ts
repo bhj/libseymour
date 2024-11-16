@@ -89,12 +89,14 @@ class Reader {
       obj.parameters.T = this.tokenPost
     }
 
-    // remove undefined params and make sure they're strings
-    const params = new URLSearchParams(
-      Object.entries(obj.parameters)
-        .filter(([, val]) => val !== undefined)
-        .map(([key, val]) => [key, String(val)]),
-    )
+    const params = obj.parameters instanceof URLSearchParams
+      ? obj.parameters
+      : new URLSearchParams(
+        Object.entries(obj.parameters)
+          // remove undefined properties and make sure they're strings
+          .filter(([, val]) => val !== undefined)
+          .map(([key, val]) => [key, String(val)]),
+      )
 
     const url = obj.method === 'GET'
       ? `${obj.url}?${params.toString()}`
