@@ -246,6 +246,25 @@ class Reader {
       type: 'text',
     })
   }
+
+  public async setItemTag (itemId: string | string[], tag: string | string[], mode: 'add' | 'remove') {
+    if (!itemId || !tag || !mode) throw new Error('itemId, tag, and mode required')
+    if (!['add', 'remove'].includes(mode)) throw new Error('mode must be "add" or "remove"')
+
+    if (!Array.isArray(itemId)) itemId = [itemId]
+    if (!Array.isArray(tag)) tag = [tag]
+
+    const tagMode = mode === 'add' ? 'a' : 'r'
+    const params = new URLSearchParams(itemId.map(id => ['i', id]))
+    tag.forEach(t => params.append(tagMode, t))
+
+    return this.req({
+      method: 'POST',
+      url: this.url + Reader.SUFFIX_EDIT_TAG,
+      parameters: params,
+      type: 'text',
+    })
+  }
 }
 
 export default Reader
