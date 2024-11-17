@@ -46,13 +46,9 @@ class Reader {
   private static SUFFIX_EDIT_TAG = 'edit-tag'
 
   private static TAGS = {
-    'like': 'user/-/state/com.google/like',
     'label': 'user/-/label/',
     'star': 'user/-/state/com.google/starred',
     'read': 'user/-/state/com.google/read',
-    'fresh': 'user/-/state/com.google/fresh',
-    'share': 'user/-/state/com.google/broadcast',
-    'kept-unread': 'user/-/state/com.google/kept-unread',
     'reading-list': 'user/-/state/com.google/reading-list',
   }
 
