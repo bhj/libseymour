@@ -166,7 +166,7 @@ class Reader {
     return res.subscriptions
   }
 
-  public getFeedItems (feedId: string, opts: IFeedItemOpts = {}) {
+  public getItems (streamId: string, opts: IFeedItemOpts = {}) {
     const params = {
       c: opts.continuation || undefined,
       n: typeof opts.num === 'number' ? opts.num : 50,
@@ -183,7 +183,7 @@ class Reader {
     })
   }
 
-  public async getLabels () {
+  public async getTags () {
     const res = await this.req({
       url: this.url + 'tag/list',
       type: 'json',
@@ -192,7 +192,7 @@ class Reader {
     return res.tags
   }
 
-  public async getUnread () {
+  public async getUnreadCounts () {
     const res = await this.req({
       url: this.url + 'unread-count',
       type: 'json',
