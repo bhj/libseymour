@@ -27,6 +27,8 @@ interface IAllReadOpts {
   usMax?: number
 }
 
+type OKString = Promise<'OK'>
+
 class Reader {
   private static CLIENT = 'libseymour'
   private static PATH_BASE = '/reader/api/0/'
@@ -226,7 +228,7 @@ class Reader {
     })
   }
 
-  public async setAllRead (streamId: string, opts: IAllReadOpts = {}) {
+  public async setAllRead (streamId: string, opts: IAllReadOpts = {}): OKString {
     if (!streamId) throw new Error('streamId required')
 
     const params = {
@@ -242,7 +244,7 @@ class Reader {
     })
   }
 
-  public async setItemTag (itemId: string | string[], tag: string | string[], mode: 'add' | 'remove') {
+  private _setItemTag (itemId: string | string[], tag: string | string[], mode: 'add' | 'remove'): OKString {
     if (!itemId || !tag || !mode) throw new Error('itemId, tag, and mode required')
     if (!['add', 'remove'].includes(mode)) throw new Error('mode must be "add" or "remove"')
 
@@ -259,6 +261,14 @@ class Reader {
       params,
       type: 'text',
     })
+  }
+
+  public addItemTag (itemId: string | string[], tag: string | string[]) {
+    return this._setItemTag(itemId, tag, 'add')
+  }
+
+  public removeItemTag (itemId: string | string[], tag: string | string[]) {
+    return this._setItemTag(itemId, tag, 'remove')
   }
 }
 
