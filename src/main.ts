@@ -177,6 +177,24 @@ class Reader {
     }
 
     return this.req({
+      url: this.url + 'stream/contents/' + encodeURIComponent(streamId),
+      params,
+      type: 'json',
+    })
+  }
+
+  public getItemIds (streamId: string, opts: IFeedItemOpts = {}) {
+    const params = {
+      s: streamId,
+      c: opts.continuation || undefined,
+      n: typeof opts.num === 'number' ? opts.num : 50,
+      r: opts.sort === 'asc' ? 'o' : 'd',
+      xt: opts.exclude || undefined,
+      ot: typeof opts.sMin == 'number' ? opts.sMin : undefined,
+      nt: typeof opts.sMax == 'number' ? opts.sMax : undefined,
+    }
+
+    return this.req({
       url: this.url + 'stream/items/ids',
       params,
       type: 'json',
