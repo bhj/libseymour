@@ -185,7 +185,19 @@ class Reader {
     })
   }
 
-  public getItemIds (streamId: string, opts: IFeedItemOpts = {}) {
+  public getItemsById (itemId: string | string[]) {
+    if (!Array.isArray(itemId)) itemId = [itemId]
+    const params = new URLSearchParams(itemId.map(id => ['i', id]))
+
+    return this.req({
+      method: 'POST',
+      url: this.url + 'stream/items/contents',
+      params,
+      type: 'json',
+    })
+  }
+
+  public async getItemIds (streamId: string, opts: IFeedItemOpts = {}): Promise<string[]> {
     const params = {
       s: streamId,
       c: opts.continuation || undefined,
@@ -196,11 +208,15 @@ class Reader {
       nt: typeof opts.sMax == 'number' ? opts.sMax : undefined,
     }
 
-    return this.req({
+    const res = await this.req({
       url: this.url + 'stream/items/ids',
       params,
       type: 'json',
     })
+
+    if (!res.itemRefs?.length) return []
+
+    return res.itemRefs.map(ref => ref.id)
   }
 
   public async getTags () {
