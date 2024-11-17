@@ -29,22 +29,8 @@ interface IAllReadOpts {
 
 class Reader {
   private static CLIENT = 'libseymour'
-
   private static PATH_BASE = '/reader/api/0/'
   private static PATH_AUTH = '/accounts/ClientLogin'
-  private static PATH_STREAM = 'stream/contents/'
-  private static PATH_SUBSCRIPTIONS = 'subscription/'
-  private static PATH_TAGS = 'tag/'
-
-  private static SUFFIX_LIST = 'list'
-  private static SUFFIX_EDIT = 'edit'
-  private static SUFFIX_MARK_ALL_READ = 'mark-all-as-read'
-  private static SUFFIX_TOKEN = 'token'
-  private static SUFFIX_USER_INFO = 'user-info'
-  private static SUFFIX_UNREAD = 'unread-count'
-  private static SUFFIX_RENAME_LABEL = 'rename-tag'
-  private static SUFFIX_EDIT_TAG = 'edit-tag'
-
   private static TAGS = {
     'label': 'user/-/label/',
     'star': 'user/-/state/com.google/starred',
@@ -153,7 +139,7 @@ class Reader {
   public async getPostToken () {
     if (!this.tokenAuth) throw new Error('auth token required')
 
-    const res = await fetch(this.url + Reader.SUFFIX_TOKEN, {
+    const res = await fetch(this.url + 'token', {
       method: 'GET',
       headers: {
         Authorization: `GoogleLogin auth=${this.tokenAuth}`,
@@ -173,7 +159,7 @@ class Reader {
 
   public async getFeeds () {
     const res = await this.req({
-      url: this.url + Reader.PATH_SUBSCRIPTIONS + Reader.SUFFIX_LIST,
+      url: this.url + 'subscription/list',
       type: 'json',
     })
 
@@ -191,7 +177,7 @@ class Reader {
     }
 
     return this.req({
-      url: this.url + Reader.PATH_STREAM + encodeURIComponent(feedId),
+      url: this.url + 'stream/items/ids',
       params,
       type: 'json',
     })
@@ -199,7 +185,7 @@ class Reader {
 
   public async getLabels () {
     const res = await this.req({
-      url: this.url + Reader.PATH_TAGS + Reader.SUFFIX_LIST,
+      url: this.url + 'tag/list',
       type: 'json',
     })
 
@@ -208,7 +194,7 @@ class Reader {
 
   public async getUnread () {
     const res = await this.req({
-      url: this.url + Reader.SUFFIX_UNREAD,
+      url: this.url + 'unread-count',
       type: 'json',
     })
 
@@ -217,7 +203,7 @@ class Reader {
 
   public getUserInfo () {
     return this.req({
-      url: this.url + Reader.SUFFIX_USER_INFO,
+      url: this.url + 'user-info',
       type: 'json',
     })
   }
@@ -232,7 +218,7 @@ class Reader {
 
     return this.req({
       method: 'POST',
-      url: this.url + Reader.SUFFIX_MARK_ALL_READ,
+      url: this.url + 'mark-all-as-read',
       params,
       type: 'text',
     })
@@ -251,7 +237,7 @@ class Reader {
 
     return this.req({
       method: 'POST',
-      url: this.url + Reader.SUFFIX_EDIT_TAG,
+      url: this.url + 'edit-tag',
       params,
       type: 'text',
     })
