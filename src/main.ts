@@ -7,7 +7,7 @@
     ITEM - an individual article
 */
 
-interface IFeedItemOpts {
+interface IGetFeedItemOpts {
   /** Continuation key from a previous request, used to fetch the next batch. API param='c' */
   continuation?: string
   /** Exclude a streamId. API param='xt' */
@@ -25,6 +25,66 @@ interface IFeedItemOpts {
 interface IAllReadOpts {
   /** Exclude items newer than this timestamp (microseconds); API param='ts' */
   usMax?: number
+}
+
+interface IFeed {
+  id: string
+  title: string
+  categories: {
+    id: string
+    label: string
+  }[]
+  url: string
+  htmlUrl: string
+  iconUrl: string
+}
+
+interface IFeedItem {
+  id: string
+  crawlTimeMsec: string
+  timestampUsec: string
+  published: number
+  title: string
+  canonical: Array<{
+    href: string
+  }>
+  alternate: Array<{
+    href: string
+  }>
+  categories: string[]
+  origin: {
+    streamId: string
+    htmlUrl: string
+    title: string
+  }
+  summary: {
+    content: string
+  }
+  author: string
+}
+
+interface IFeedItemList {
+  id: string
+  updated: number
+  items: IFeedItem[]
+}
+
+interface ITag {
+  id: string
+  type?: 'folder' | string
+}
+
+interface IUnreadCount {
+  count: number
+  id: string
+  newestItemTimestampUsec: number
+}
+
+interface IUserInfo {
+  userEmail?: string
+  userId?: string
+  userName?: string
+  userProfileId?: string
 }
 
 type OKString = Promise<'OK'>
@@ -159,7 +219,7 @@ class Reader {
     this.tokenPost = token
   }
 
-  public async getFeeds () {
+  public async getFeeds (): Promise<IFeed[]> {
     const res = await this.req({
       url: this.url + 'subscription/list',
       type: 'json',
@@ -168,7 +228,7 @@ class Reader {
     return res.subscriptions
   }
 
-  public getItems (streamId: string, opts: IFeedItemOpts = {}) {
+  public getItems (streamId: string, opts: IGetFeedItemOpts = {}): Promise<IFeedItemList> {
     const params = {
       c: opts.continuation || undefined,
       n: typeof opts.num === 'number' ? opts.num : 50,
@@ -185,7 +245,7 @@ class Reader {
     })
   }
 
-  public getItemsById (itemId: string | string[]) {
+  public getItemsById (itemId: string | string[]): Promise<IFeedItemList> {
     if (!Array.isArray(itemId)) itemId = [itemId]
     const params = new URLSearchParams(itemId.map(id => ['i', id]))
 
@@ -197,7 +257,7 @@ class Reader {
     })
   }
 
-  public async getItemIds (streamId: string, opts: IFeedItemOpts = {}): Promise<string[]> {
+  public async getItemIds (streamId: string, opts: IGetFeedItemOpts = {}): Promise<string[]> {
     const params = {
       s: streamId,
       c: opts.continuation || undefined,
@@ -214,12 +274,10 @@ class Reader {
       type: 'json',
     })
 
-    if (!res.itemRefs?.length) return []
-
-    return res.itemRefs.map(ref => ref.id)
+    return res.itemRefs.map((ref: { id: string }) => ref.id)
   }
 
-  public async getTags () {
+  public async getTags (): Promise<ITag[]> {
     const res = await this.req({
       url: this.url + 'tag/list',
       type: 'json',
@@ -228,16 +286,18 @@ class Reader {
     return res.tags
   }
 
-  public async getUnreadCounts () {
+  public async getUnreadCounts (): Promise<IUnreadCount[]> {
     const res = await this.req({
       url: this.url + 'unread-count',
       type: 'json',
     })
 
-    return res.unreadcounts
+    return res.unreadcounts.map((item: Omit<IUnreadCount, 'newestItemTimestampUsec'> & {
+      newestItemTimestampUsec: string
+    }) => ({ ...item, newestItemTimestampUsec: parseInt(item.newestItemTimestampUsec, 10) }))
   }
 
-  public getUserInfo () {
+  public getUserInfo (): Promise<IUserInfo> {
     return this.req({
       url: this.url + 'user-info',
       type: 'json',
