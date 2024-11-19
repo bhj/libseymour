@@ -41,8 +41,8 @@ interface IFeed {
 
 interface IFeedItem {
   id: string
-  crawlTimeMsec: string
-  timestampUsec: string
+  crawlTimeMsec: number
+  timestampUsec: number
   published: number
   title: string
   canonical: Array<{
@@ -228,7 +228,7 @@ class Reader {
     return res.subscriptions
   }
 
-  public getItems (streamId: string, opts: IGetFeedItemOpts = {}): Promise<IFeedItemList> {
+  public async getItems (streamId: string, opts: IGetFeedItemOpts = {}): Promise<IFeedItemList> {
     const params = {
       c: opts.continuation || undefined,
       n: typeof opts.num === 'number' ? opts.num : 50,
@@ -238,23 +238,37 @@ class Reader {
       nt: typeof opts.sMax == 'number' ? opts.sMax : undefined,
     }
 
-    return this.req({
+    const res = await this.req({
       url: this.url + 'stream/contents/' + encodeURIComponent(streamId),
       params,
       type: 'json',
     })
+
+    res.items.forEach((item: IFeedItem) => {
+      item.crawlTimeMsec = parseInt(item.crawlTimeMsec as unknown as string, 10)
+      item.timestampUsec = parseInt(item.timestampUsec as unknown as string, 10)
+    })
+
+    return res
   }
 
-  public getItemsById (itemId: string | string[]): Promise<IFeedItemList> {
+  public async getItemsById (itemId: string | string[]): Promise<IFeedItemList> {
     if (!Array.isArray(itemId)) itemId = [itemId]
     const params = new URLSearchParams(itemId.map(id => ['i', id]))
 
-    return this.req({
+    const res = await this.req({
       method: 'POST',
       url: this.url + 'stream/items/contents',
       params,
       type: 'json',
     })
+
+    res.items.forEach((item: IFeedItem) => {
+      item.crawlTimeMsec = parseInt(item.crawlTimeMsec as unknown as string, 10)
+      item.timestampUsec = parseInt(item.timestampUsec as unknown as string, 10)
+    })
+
+    return res
   }
 
   public async getItemIds (streamId: string, opts: IGetFeedItemOpts = {}): Promise<string[]> {
@@ -292,9 +306,11 @@ class Reader {
       type: 'json',
     })
 
-    return res.unreadcounts.map((item: Omit<IUnreadCount, 'newestItemTimestampUsec'> & {
-      newestItemTimestampUsec: string
-    }) => ({ ...item, newestItemTimestampUsec: parseInt(item.newestItemTimestampUsec, 10) }))
+    res.unreadcounts.forEach((item: IUnreadCount) => {
+      item.newestItemTimestampUsec = parseInt(item.newestItemTimestampUsec as unknown as string, 10)
+    })
+
+    return res.unreadcounts
   }
 
   public getUserInfo (): Promise<IUserInfo> {
