@@ -7,6 +7,13 @@
     ITEM - an individual article
 */
 
+interface IAddFeedOpts {
+  /** Display name/title for the new feed. API param='t' */
+  name?: string
+  /** Label/category/folder name, in streamId form (user/-/label/<tagname>). Created if it doesn't exist. API param='a' */
+  tagStreamId?: string
+}
+
 interface IGetFeedItemOpts {
   /** Continuation key from a previous request, used to fetch the next batch. API param='c' */
   continuation?: string
@@ -228,6 +235,28 @@ class Reader {
     return res.subscriptions
   }
 
+  public addFeed (url: string, opts: IAddFeedOpts = {}) {
+    if (!url) throw new Error('url required')
+
+    const params = {
+      ac: 'subscribe',
+      s: 'feed/' + url.replace(/^feed\//i, ''),
+      t: opts.name?.trim() || undefined,
+      a: opts.tagStreamId || undefined,
+    }
+
+    return this._editFeed(params)
+  }
+
+  public removeFeed (streamId: string) {
+    const params = {
+      ac: 'unsubscribe',
+      s: 'feed/' + streamId.replace(/^feed\//i, ''),
+    }
+
+    return this._editFeed(params)
+  }
+
   public async getItems (streamId: string, opts: IGetFeedItemOpts = {}): Promise<IFeedItemList> {
     const params = {
       c: opts.continuation || undefined,
@@ -331,6 +360,15 @@ class Reader {
     return this.req({
       method: 'POST',
       url: this.url + 'mark-all-as-read',
+      params,
+      type: 'text',
+    })
+  }
+
+  private _editFeed (params): Promise<OKString> {
+    return this.req({
+      method: 'POST',
+      url: this.url + 'subscription/edit',
       params,
       type: 'text',
     })
