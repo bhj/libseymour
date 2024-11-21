@@ -248,11 +248,11 @@ class Reader {
     return this._editFeed(params)
   }
 
-  public removeFeed (streamId: string) {
-    const params = {
-      ac: 'unsubscribe',
-      s: 'feed/' + streamId.replace(/^feed\//i, ''),
-    }
+  public removeFeed (streamId: string | string[]) {
+    if (!Array.isArray(streamId)) streamId = [streamId]
+
+    const params = new URLSearchParams(streamId.map(id => ['s', 'feed/' + id.replace(/^feed\//i, '')]))
+    params.append('ac', 'unsubscribe')
 
     return this._editFeed(params)
   }
