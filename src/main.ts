@@ -1,14 +1,7 @@
-/*
-  On Terminology: the API is a little confusing on what it calls things so I made it simple for myself and have set these definitions.
-    SUBSCRIPTION - either a label or a feed subscription
-    FEED - an individual site's rss feed
-    LABEL - a folder/label/category that contains feeds.
-    TAGS - the states applied to individual items (read, starred, etc.)
-    ITEM - an individual article
-*/
-
-interface IAddFeedOpts {
-  /** Display name/title for the new feed. API param='t' */
+interface INewFeed {
+  /** Feed URL (automatically prepended with "feed/"). API param='s' */
+  url: string
+  /** Feed display name/title. API param='t' */
   name?: string
   /** Label/category/folder name, in streamId form (user/-/label/<tagname>). Created if it doesn't exist. API param='a' */
   tagStreamId?: string
@@ -235,24 +228,36 @@ class Reader {
     return res.subscriptions
   }
 
-  public addFeed (url: string, opts: IAddFeedOpts = {}) {
-    if (!url) throw new Error('url required')
+  public addFeed (feed: string | INewFeed | INewFeed[]) {
+    if (!feed) throw new Error('url or feed object(s) required')
 
-    const params = {
-      ac: 'subscribe',
-      s: 'feed/' + url.replace(/^feed\//i, ''),
-      t: opts.name?.trim() || undefined,
-      a: opts.tagStreamId || undefined,
+    const params = new URLSearchParams({ ac: 'subscribe' })
+    const feedRegExp = /^feed\//i
+
+    if (typeof feed === 'string') {
+      params.append('s', 'feed/' + feed.replace(feedRegExp, ''))
+    } else {
+      if (!Array.isArray(feed)) feed = [feed]
+
+      feed.forEach((f) => {
+        params.append('s', 'feed/' + f.url.replace(feedRegExp, ''))
+        params.append('t', f.name?.trim() ?? '')
+        // FreshRSS bug: tag only applied to last item; rest go uncategorized
+        // https://github.com/FreshRSS/FreshRSS/issues/7012
+        params.append('a', f.tagStreamId?.trim() ?? '')
+      })
     }
 
     return this._editFeed(params)
   }
 
   public removeFeed (streamId: string | string[]) {
-    if (!Array.isArray(streamId)) streamId = [streamId]
+    if (!streamId) throw new Error('streamId(s) required')
 
-    const params = new URLSearchParams(streamId.map(id => ['s', 'feed/' + id.replace(/^feed\//i, '')]))
-    params.append('ac', 'unsubscribe')
+    const params = new URLSearchParams({ ac: 'unsubscribe' })
+
+    if (!Array.isArray(streamId)) streamId = [streamId]
+    streamId.forEach(s => params.append('s', 'feed/' + s.replace(/^feed\//i, '')))
 
     return this._editFeed(params)
   }
