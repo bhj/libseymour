@@ -7,6 +7,13 @@ interface INewFeed {
   tagStreamId?: string
 }
 
+interface IEditFeed {
+  /** Feed URL or streamId. API param='s' */
+  id: string
+  /** Feed display name/title. API param='t' */
+  title: string
+}
+
 interface IGetFeedItemOpts {
   /** Continuation key from a previous request, used to fetch the next batch. API param='c' */
   continuation?: string
@@ -258,6 +265,22 @@ class Reader {
 
     if (!Array.isArray(streamId)) streamId = [streamId]
     streamId.forEach(s => params.append('s', 'feed/' + s.replace(/^feed\//i, '')))
+
+    return this._editFeed(params)
+  }
+
+  /** Rename one or more feeds */
+  public setFeedName (feed: IEditFeed | IEditFeed[]): Promise<OKString> {
+    if (!feed) throw new Error('feed object(s) required')
+    if (!Array.isArray(feed)) feed = [feed]
+
+    const params = new URLSearchParams({ ac: 'edit' })
+    const feedRegExp = /^feed\//i
+
+    feed.forEach((f) => {
+      params.append('s', 'feed/' + f.id.replace(feedRegExp, ''))
+      params.append('t', f.title?.trim() ?? '')
+    })
 
     return this._editFeed(params)
   }
