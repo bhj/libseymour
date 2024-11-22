@@ -14,6 +14,13 @@ interface IEditFeed {
   title: string
 }
 
+interface IEditFeedTagOpts {
+  /** Add label/category to feed. StreamId form optional (user/-/label/<tagname>). API param='a' */
+  add?: string
+  /** Remove label/category from feed. StreamId form optional (user/-/label/<tagname>). API param='r' */
+  remove?: string
+}
+
 interface IGetFeedItemOpts {
   /** Continuation key from a previous request, used to fetch the next batch. API param='c' */
   continuation?: string
@@ -283,6 +290,23 @@ class Reader {
       params.append('s', Reader.PREFIX_FEED + f.id.replace(Reader.PREFIX_FEED_REGEXP, ''))
       params.append('t', f.title?.trim() ?? '')
     })
+
+    return this._editFeed(params)
+  }
+
+  /** Add a tag to, and/or remove a tag from, one or more feeds */
+  public setFeedTag (streamId: string | string[], opts: IEditFeedTagOpts = {}): Promise<OKString> {
+    if (!streamId) throw new Error('streamId(s) required')
+    if (!Array.isArray(streamId)) streamId = [streamId]
+
+    const params = new URLSearchParams({ ac: 'edit' })
+
+    streamId.forEach((id) => {
+      params.append('s', Reader.PREFIX_FEED + id.replace(Reader.PREFIX_FEED_REGEXP, ''))
+    })
+
+    if (opts.add) params.append('a', Reader.TAGS.label + opts.add.replace(Reader.PREFIX_LABEL_REGEXP, ''))
+    if (opts.remove) params.append('r', Reader.TAGS.label + opts.remove.replace(Reader.PREFIX_LABEL_REGEXP, ''))
 
     return this._editFeed(params)
   }
