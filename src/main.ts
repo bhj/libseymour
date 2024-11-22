@@ -107,6 +107,10 @@ class Reader {
     'reading-list': 'user/-/state/com.google/reading-list',
   }
 
+  private static PREFIX_FEED = 'feed/'
+  private static PREFIX_FEED_REGEXP = new RegExp(`^${Reader.PREFIX_FEED}`, 'i')
+  private static PREFIX_LABEL_REGEXP = new RegExp(`^${Reader.TAGS.label}`, 'i')
+
   private url: string
   private urlAuth: string
   private tokenAuth: string
@@ -239,15 +243,14 @@ class Reader {
     if (!feed) throw new Error('url or feed object(s) required')
 
     const params = new URLSearchParams({ ac: 'subscribe' })
-    const feedRegExp = /^feed\//i
 
     if (typeof feed === 'string') {
-      params.append('s', 'feed/' + feed.replace(feedRegExp, ''))
+      params.append('s', Reader.PREFIX_FEED + feed.replace(Reader.PREFIX_FEED_REGEXP, ''))
     } else {
       if (!Array.isArray(feed)) feed = [feed]
 
       feed.forEach((f) => {
-        params.append('s', 'feed/' + f.url.replace(feedRegExp, ''))
+        params.append('s', Reader.PREFIX_FEED + f.url.replace(Reader.PREFIX_FEED_REGEXP, ''))
         params.append('t', f.name?.trim() ?? '')
         // FreshRSS bug: tag only applied to last item; rest go uncategorized
         // https://github.com/FreshRSS/FreshRSS/issues/7012
@@ -258,13 +261,13 @@ class Reader {
     return this._editFeed(params)
   }
 
+  /** Remove one or more feeds */
   public removeFeed (streamId: string | string[]) {
     if (!streamId) throw new Error('streamId(s) required')
+    if (!Array.isArray(streamId)) streamId = [streamId]
 
     const params = new URLSearchParams({ ac: 'unsubscribe' })
-
-    if (!Array.isArray(streamId)) streamId = [streamId]
-    streamId.forEach(s => params.append('s', 'feed/' + s.replace(/^feed\//i, '')))
+    streamId.forEach(id => params.append('s', Reader.PREFIX_FEED + id.replace(Reader.PREFIX_FEED_REGEXP, '')))
 
     return this._editFeed(params)
   }
@@ -275,10 +278,9 @@ class Reader {
     if (!Array.isArray(feed)) feed = [feed]
 
     const params = new URLSearchParams({ ac: 'edit' })
-    const feedRegExp = /^feed\//i
 
     feed.forEach((f) => {
-      params.append('s', 'feed/' + f.id.replace(feedRegExp, ''))
+      params.append('s', Reader.PREFIX_FEED + f.id.replace(Reader.PREFIX_FEED_REGEXP, ''))
       params.append('t', f.title?.trim() ?? '')
     })
 
@@ -329,6 +331,8 @@ class Reader {
   }
 
   public async getItemIds (streamId: string, opts: IGetFeedItemOpts = {}): Promise<string[]> {
+    if (!streamId) throw new Error('streamId required')
+
     const params = {
       s: streamId,
       c: opts.continuation || undefined,
