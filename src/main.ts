@@ -1,10 +1,13 @@
 interface INewFeed {
-  /** Feed URL (automatically prepended with "feed/"). API param='s' */
+  /** Feed URL. StreamId form optional (feed/<url>). API param='s' */
   url: string
   /** Feed display name/title. API param='t' */
-  name?: string
-  /** Label/category/folder name, in streamId form (user/-/label/<tagname>). Created if it doesn't exist. API param='a' */
-  tagStreamId?: string
+  title?: string
+}
+
+interface INewFeedOpts {
+  /** Label/category name/id. StreamId form optional (user/-/label/<tag>). Created if it doesn't exist. API param='a' */
+  tag?: string
 }
 
 interface IEditFeed {
@@ -246,9 +249,8 @@ class Reader {
     return res.subscriptions
   }
 
-  public addFeed (feed: string | INewFeed | INewFeed[]) {
+  public addFeed (feed: string | INewFeed | INewFeed[], opts: INewFeedOpts = {}) {
     if (!feed) throw new Error('url or feed object(s) required')
-
     const params = new URLSearchParams({ ac: 'subscribe' })
 
     if (typeof feed === 'string') {
@@ -258,11 +260,12 @@ class Reader {
 
       feed.forEach((f) => {
         params.append('s', Reader.PREFIX_FEED + f.url.replace(Reader.PREFIX_FEED_REGEXP, ''))
-        params.append('t', f.name?.trim() ?? '')
-        // FreshRSS bug: tag only applied to last item; rest go uncategorized
-        // https://github.com/FreshRSS/FreshRSS/issues/7012
-        params.append('a', f.tagStreamId?.trim() ?? '')
+        params.append('t', f.title ?? '')
       })
+    }
+
+    if (opts.tag) {
+      params.append('a', Reader.TAGS.label + opts.tag.replace(Reader.PREFIX_LABEL_REGEXP, ''))
     }
 
     return this._editFeed(params)
