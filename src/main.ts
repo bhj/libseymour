@@ -18,9 +18,9 @@ interface IEditFeed {
 }
 
 interface IEditFeedTagOpts {
-  /** Add label/category to feed. StreamId form optional (user/-/label/<tagname>). API param='a' */
+  /** Add label/category to feed(s). StreamId form optional (user/-/label/<tagname>). API param='a' */
   add?: string
-  /** Remove label/category from feed. StreamId form optional (user/-/label/<tagname>). API param='r' */
+  /** Remove label/category from feed(s). StreamId form optional (user/-/label/<tagname>). API param='r' */
   remove?: string
 }
 
@@ -88,7 +88,7 @@ interface IFeedItemList {
 
 interface ITag {
   id: string
-  type?: 'folder' | string
+  type?: 'folder' | 'tag' | string
 }
 
 interface IUnreadCount {
@@ -283,7 +283,7 @@ class Reader {
   }
 
   /** Rename one or more feeds */
-  public setFeedName (feed: IEditFeed | IEditFeed[]): Promise<OKString> {
+  public renameFeed (feed: IEditFeed | IEditFeed[]): Promise<OKString> {
     if (!feed) throw new Error('feed object(s) required')
     if (!Array.isArray(feed)) feed = [feed]
 
@@ -291,7 +291,7 @@ class Reader {
 
     feed.forEach((f) => {
       params.append('s', Reader.PREFIX_FEED + f.id.replace(Reader.PREFIX_FEED_REGEXP, ''))
-      params.append('t', f.title?.trim() ?? '')
+      params.append('t', f.title ?? '')
     })
 
     return this._editFeed(params)
@@ -315,6 +315,8 @@ class Reader {
   }
 
   public async getItems (streamId: string, opts: IGetFeedItemOpts = {}): Promise<IFeedItemList> {
+    if (!streamId) throw new Error('streamId required')
+
     const params = {
       c: opts.continuation || undefined,
       n: typeof opts.num === 'number' ? opts.num : 50,
@@ -339,7 +341,9 @@ class Reader {
   }
 
   public async getItemsById (itemId: string | string[]): Promise<IFeedItemList> {
+    if (!itemId) throw new Error('item id(s) required')
     if (!Array.isArray(itemId)) itemId = [itemId]
+
     const params = new URLSearchParams(itemId.map(id => ['i', id]))
 
     const res = await this.req({
@@ -453,13 +457,13 @@ class Reader {
 
   private _setItemTag (itemId: string | string[], tag: string | string[], mode: 'add' | 'remove'): OKString {
     if (!itemId || !tag || !mode) throw new Error('itemId, tag, and mode required')
-    if (!['add', 'remove'].includes(mode)) throw new Error('mode must be "add" or "remove"')
 
     if (!Array.isArray(itemId)) itemId = [itemId]
     if (!Array.isArray(tag)) tag = [tag]
 
-    const tagMode = mode === 'add' ? 'a' : 'r'
     const params = new URLSearchParams(itemId.map(id => ['i', id]))
+    const tagMode = mode === 'add' ? 'a' : 'r'
+
     tag.forEach(t => params.append(tagMode, t))
 
     return this.req({
