@@ -385,6 +385,24 @@ class Reader {
     return res.tags
   }
 
+  /**
+   * Renames a tag.
+   *
+   * @param tag - Current label/category name/id. StreamId form optional (user/-/label/<tag>). API param='s'
+   * @param newTag - New label/category name/id. StreamId form optional (user/-/label/<tag>). API param='dest'
+   */
+  public renameTag (tag: string, newTag: string): Promise<OKString> {
+    return this.req({
+      method: 'POST',
+      url: this.url + 'rename-tag',
+      params: {
+        s: Reader.TAGS.label + tag.replace(Reader.PREFIX_LABEL_REGEXP, ''),
+        dest: Reader.TAGS.label + newTag.replace(Reader.PREFIX_LABEL_REGEXP, ''),
+      },
+      type: 'text',
+    })
+  }
+
   public async getUnreadCounts (): Promise<IUnreadCount[]> {
     const res = await this.req({
       url: this.url + 'unread-count',
