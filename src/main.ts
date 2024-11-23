@@ -249,6 +249,12 @@ class Reader {
     return res.subscriptions
   }
 
+  /**
+   * Adds a feed.
+   *
+   * @param feed - The feed's URL, or an object (or array of objects) defining both a feed URL and title. StreamId form is optional for the URL (feed/<url>). API param='s'
+   * @param opts - Additional options applied to the feed(s).
+   */
   public addFeed (feed: string | INewFeed | INewFeed[], opts: INewFeedOpts = {}) {
     if (!feed) throw new Error('url or feed object(s) required')
     const params = new URLSearchParams({ ac: 'subscribe' })
