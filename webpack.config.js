@@ -2,7 +2,7 @@ import path from 'path'
 
 export default {
   mode: 'development',
-  entry: path.join(import.meta.dirname, 'src', 'main.ts'),
+  entry: path.join(import.meta.dirname, 'src', 'index.ts'),
   module: {
     rules: [
       {

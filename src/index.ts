@@ -436,7 +436,7 @@ class Reader {
     })
   }
 
-  public async setAllRead (streamId: string, opts: IAllReadOpts = {}): OKString {
+  public async setAllRead (streamId: string, opts: IAllReadOpts = {}): Promise<OKString> {
     if (!streamId) throw new Error('streamId required')
 
     const params = {
@@ -461,7 +461,7 @@ class Reader {
     })
   }
 
-  private _setItemTag (itemId: string | string[], tag: string | string[], mode: 'add' | 'remove'): OKString {
+  private _setItemTag (itemId: string | string[], tag: string | string[], mode: 'add' | 'remove'): Promise<OKString> {
     if (!itemId || !tag || !mode) throw new Error('itemId, tag, and mode required')
 
     if (!Array.isArray(itemId)) itemId = [itemId]
