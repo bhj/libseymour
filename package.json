@@ -10,7 +10,7 @@
   },
   "scripts": {
     "dev": "webpack serve --static src --open",
-    "docs:build": "typedoc src/index.ts",
+    "docs:build": "typedoc",
     "docs:serve": "webpack serve --static docs --open",
     "dist": "tsc && (echo '/*!' && cat LICENSE && echo '*/' && cat ./dist/index.js) | terser --module --compress -o ./dist/index.js",
     "lint": "eslint .",
@@ -28,6 +28,7 @@
     "terser": "^5.36.0",
     "ts-loader": "^9.5.1",
     "typedoc": "^0.26.11",
+    "typedoc-plugin-merge-modules": "^6.0.3",
     "typescript": "^5.6.3",
     "typescript-eslint": "^8.13.0",
     "webpack": "^5.96.1",

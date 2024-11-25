@@ -1,30 +1,30 @@
-interface INewFeed {
+export interface INewFeed {
   /** Feed URL. StreamId form optional (feed/<url>). API param='s' */
   url: string
   /** Feed display name/title. API param='t' */
   title?: string
 }
 
-interface INewFeedOpts {
+export interface INewFeedOpts {
   /** Label/category name/id. StreamId form optional (user/-/label/<tag>). Created if it doesn't exist. API param='a' */
   tag?: string
 }
 
-interface IEditFeed {
+export interface IEditFeed {
   /** Feed URL or streamId. API param='s' */
   id: string
   /** Feed display name/title. API param='t' */
   title: string
 }
 
-interface IEditFeedTagOpts {
+export interface IEditFeedTagOpts {
   /** Add label/category to feed(s). StreamId form optional (user/-/label/<tagname>). API param='a' */
   add?: string
   /** Remove label/category from feed(s). StreamId form optional (user/-/label/<tagname>). API param='r' */
   remove?: string
 }
 
-interface IGetFeedItemOpts {
+export interface IGetFeedItemOpts {
   /** Continuation key from a previous request, used to fetch the next batch. API param='c' */
   continuation?: string
   /** Exclude a streamId. API param='xt' */
@@ -39,12 +39,12 @@ interface IGetFeedItemOpts {
   sort?: 'asc' | 'desc'
 }
 
-interface IAllReadOpts {
+export interface IAllReadOpts {
   /** Exclude items newer than this timestamp (microseconds); API param='ts' */
   usMax?: number
 }
 
-interface IFeed {
+export interface IFeed {
   id: string
   title: string
   categories: {
@@ -56,7 +56,7 @@ interface IFeed {
   iconUrl: string
 }
 
-interface IFeedItem {
+export interface IFeedItem {
   id: string
   crawlTimeMsec: number
   timestampUsec: number
@@ -80,33 +80,33 @@ interface IFeedItem {
   author: string
 }
 
-interface IFeedItemList {
+export interface IFeedItemList {
   id: string
   updated: number
   items: IFeedItem[]
 }
 
-interface ITag {
+export interface ITag {
   id: string
   type?: 'folder' | 'tag' | string
 }
 
-interface IUnreadCount {
+export interface IUnreadCount {
   count: number
   id: string
   newestItemTimestampUsec: number
 }
 
-interface IUserInfo {
+export interface IUserInfo {
   userEmail?: string
   userId?: string
   userName?: string
   userProfileId?: string
 }
 
-type OKString = Promise<'OK'>
+export type OKString = Promise<'OK'>
 
-class Reader {
+export default class Reader {
   private static CLIENT = 'libseymour'
   private static PATH_BASE = '/reader/api/0/'
   private static PATH_AUTH = '/accounts/ClientLogin'
@@ -489,9 +489,7 @@ class Reader {
   }
 }
 
-export default Reader
-
-class ApiError extends Error {
+export class ApiError extends Error {
   public status: number
 
   constructor (message: string, status: number) {
