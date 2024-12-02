@@ -134,65 +134,12 @@ export default class Reader {
     this.client = config.client || Reader.CLIENT
   }
 
-  private req = async function ({ isRetry = false, method = 'GET', headers = {}, params = {}, url, type }, noAuth = false) {
-    if (this.tokenAuth && !noAuth) {
-      headers['Authorization'] = `GoogleLogin auth=${this.tokenAuth}`
-    }
-
-    const searchParams = params instanceof URLSearchParams
-      ? params
-      : new URLSearchParams(
-        Object.entries(params)
-          // remove undefined properties and make sure they're strings
-          .filter(([, val]) => val !== undefined)
-          .map(([key, val]) => [key, String(val)]),
-      )
-
-    // add default parameters for GET requests
-    if (method === 'GET') {
-      searchParams.append('ck', Date.now().toString())
-      searchParams.append('output', 'json')
-      searchParams.append('client', this.client)
-
-      url = `${url}?${searchParams.toString()}`
-    } else if (method === 'POST') {
-      // post token is required for (most) POST requests
-      if (this.tokenPost) searchParams.append('T', this.tokenPost)
-
-      url = `${url}?client=${encodeURIComponent(this.client)}`
-    }
-
-    const res = await fetch(url, {
-      method,
-      headers,
-      body: method === 'POST' ? searchParams : null,
-    })
-
-    if (res.ok) {
-      if (type === 'json') return res.json()
-      if (type === 'text') return res.text()
-      return res
-    }
-
-    if (method === 'POST' && !isRetry && (res.status === 400 || res.status === 401)) {
-      console.log(`got ${res.status}; requesting token`)
-      await this.getPostToken()
-
-      console.log('got token; retrying request')
-      return this.req({
-        isRetry: true,
-        method,
-        headers,
-        params,
-        url,
-        type,
-      })
-    } else {
-      const body = await res.text()
-      throw new ApiError(body, res.status)
-    }
-  }
-
+  /**
+    * Retreives an **auth** token for the specified username/password combination.
+    * This token will be used for future requests without needing to call setAuthToken().
+    *
+    * @category Authentication
+    */
   public async getAuthToken (username: string, password: string) {
     if (!username || !password) {
       throw new Error('missing username or password')
@@ -237,6 +184,13 @@ export default class Reader {
 
   public setPostToken (token: string) {
     this.tokenPost = token
+  }
+
+  public getUserInfo (): Promise<IUserInfo> {
+    return this.req({
+      url: this.url + 'user-info',
+      type: 'json',
+    })
   }
 
   public async getFeeds (): Promise<IFeed[]> {
@@ -302,21 +256,12 @@ export default class Reader {
     return this._editFeed(params)
   }
 
-  /** Add a tag to, and/or remove a tag from, one or more feeds */
-  public setFeedTag (streamId: string | string[], opts: IEditFeedTagOpts = {}): Promise<OKString> {
-    if (!streamId) throw new Error('streamId(s) required')
-    if (!Array.isArray(streamId)) streamId = [streamId]
+  public addFeedTag (streamId: string | string[], tag: string): Promise<OKString> {
+    return this._editFeedTag(streamId, tag, 'add')
+  }
 
-    const params = new URLSearchParams({ ac: 'edit' })
-
-    streamId.forEach((id) => {
-      params.append('s', Reader.PREFIX_FEED + id.replace(Reader.PREFIX_FEED_REGEXP, ''))
-    })
-
-    if (opts.add) params.append('a', Reader.TAGS.label + opts.add.replace(Reader.PREFIX_LABEL_REGEXP, ''))
-    if (opts.remove) params.append('r', Reader.TAGS.label + opts.remove.replace(Reader.PREFIX_LABEL_REGEXP, ''))
-
-    return this._editFeed(params)
+  public removeFeedTag (streamId: string | string[], tag: string): Promise<OKString> {
+    return this._editFeedTag(streamId, tag, 'remove')
   }
 
   public async getItems (streamId: string, opts: IGetFeedItemOpts = {}): Promise<IFeedItemList> {
@@ -388,6 +333,29 @@ export default class Reader {
     return res.itemRefs.map((ref: { id: string }) => ref.id)
   }
 
+  /**
+   * Adds a tag to the specified item.
+   *
+   * @category Items
+   */
+  public addItemTag (itemId: string | string[], tag: string | string[]) {
+    return this._editItemTag(itemId, tag, 'add')
+  }
+
+  /**
+   * Removes a tag from the specified item.
+   *
+   * @category Items
+   */
+  public removeItemTag (itemId: string | string[], tag: string | string[]) {
+    return this._editItemTag(itemId, tag, 'remove')
+  }
+
+  /**
+   * Retrieves a list of available tags.
+   *
+   * @category Tags
+   */
   public async getTags (): Promise<ITag[]> {
     const res = await this.req({
       url: this.url + 'tag/list',
@@ -428,19 +396,12 @@ export default class Reader {
     return res.unreadcounts
   }
 
-  public getUserInfo (): Promise<IUserInfo> {
-    return this.req({
-      url: this.url + 'user-info',
-      type: 'json',
-    })
-  }
-
-  public async setAllRead (streamId: string, opts: IAllReadOpts = {}): Promise<OKString> {
+  public async setAllRead (streamId: string, usMax: number): Promise<OKString> {
     if (!streamId) throw new Error('streamId required')
 
     const params = {
       s: streamId,
-      ts: typeof opts.usMax == 'number' ? opts.usMax : undefined,
+      ts: typeof usMax === 'number' ? usMax : undefined,
     }
 
     return this.req({
@@ -460,7 +421,23 @@ export default class Reader {
     })
   }
 
-  private _setItemTag (itemId: string | string[], tag: string | string[], mode: 'add' | 'remove'): Promise<OKString> {
+  private _editFeedTag (streamId: string | string[], tag: string, mode: 'add' | 'remove'): Promise<OKString> {
+    if (!streamId) throw new Error('streamId(s) required')
+    if (!Array.isArray(streamId)) streamId = [streamId]
+
+    const params = new URLSearchParams({ ac: 'edit' })
+
+    streamId.forEach((id) => {
+      params.append('s', Reader.PREFIX_FEED + id.replace(Reader.PREFIX_FEED_REGEXP, ''))
+    })
+
+    if (mode === 'add') params.append('a', tag)
+    if (mode === 'remove') params.append('r', tag)
+
+    return this._editFeed(params)
+  }
+
+  private _editItemTag (itemId: string | string[], tag: string | string[], mode: 'add' | 'remove'): Promise<OKString> {
     if (!itemId || !tag || !mode) throw new Error('itemId, tag, and mode required')
 
     if (!Array.isArray(itemId)) itemId = [itemId]
@@ -479,12 +456,63 @@ export default class Reader {
     })
   }
 
-  public addItemTag (itemId: string | string[], tag: string | string[]) {
-    return this._setItemTag(itemId, tag, 'add')
-  }
+  private req = async function ({ isRetry = false, method = 'GET', headers = {}, params = {}, url, type }, noAuth = false) {
+    if (this.tokenAuth && !noAuth) {
+      headers['Authorization'] = `GoogleLogin auth=${this.tokenAuth}`
+    }
 
-  public removeItemTag (itemId: string | string[], tag: string | string[]) {
-    return this._setItemTag(itemId, tag, 'remove')
+    const searchParams = params instanceof URLSearchParams
+      ? params
+      : new URLSearchParams(
+        Object.entries(params)
+          // remove undefined properties and make sure they're strings
+          .filter(([, val]) => val !== undefined)
+          .map(([key, val]) => [key, String(val)]),
+      )
+
+    // add default parameters for GET requests
+    if (method === 'GET') {
+      searchParams.append('ck', Date.now().toString())
+      searchParams.append('output', 'json')
+      searchParams.append('client', this.client)
+
+      url = `${url}?${searchParams.toString()}`
+    } else if (method === 'POST') {
+      // post token is required for (most) POST requests
+      if (this.tokenPost) searchParams.append('T', this.tokenPost)
+
+      url = `${url}?client=${encodeURIComponent(this.client)}`
+    }
+
+    const res = await fetch(url, {
+      method,
+      headers,
+      body: method === 'POST' ? searchParams : null,
+    })
+
+    if (res.ok) {
+      if (type === 'json') return res.json()
+      if (type === 'text') return res.text()
+      return res
+    }
+
+    if (method === 'POST' && !isRetry && (res.status === 400 || res.status === 401)) {
+      console.log(`got ${res.status}; requesting token`)
+      await this.getPostToken()
+
+      console.log('got token; retrying request')
+      return this.req({
+        isRetry: true,
+        method,
+        headers,
+        params,
+        url,
+        type,
+      })
+    } else {
+      const body = await res.text()
+      throw new ApiError(body, res.status)
+    }
   }
 }
 
