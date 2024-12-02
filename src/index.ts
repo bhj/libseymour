@@ -1,3 +1,8 @@
+/**
+ * This module's primary/default export is the {@link Reader} class.
+ * @module
+ */
+
 export interface INewFeed {
   /** Feed URL. StreamId form optional (feed/<url>). API param='s' */
   url: string
@@ -94,6 +99,27 @@ export interface IUserInfo {
 
 export type OKString = Promise<'OK'>
 
+/**
+ * Class documentation
+ *
+ * @categoryDescription Authentication
+ * Clients authenticate using API tokens. The *auth* token is used for basic
+ * requests (typically HTTP GET) while the *post* token is shorter-lived (to
+ * protect against CSRF) and used for mutations (typically HTTP POST).
+
+ * @categoryDescription Feeds
+ * Feeds represent RSS/Atom URLs and contain a list of *items*. The API often
+ * returns feeds in their *stream ID* form ```feed/<feed url>```, but this form
+ * is optional when providing feed URLs using this library.
+
+ * @categoryDescription Items
+ * Items represent individual articles/posts from a given *stream* (feed, tag, etc.)
+ *
+ * @categoryDescription Tags
+ * A tag can refer to a label, category, folder, or state such as *unread* or
+ * *starred*. Tags can be applied to individual items (typically as labels) as well
+ * as feeds/streams (typically as categories, folders, or states).
+ */
 export default class Reader {
   private static CLIENT = 'libseymour'
   private static PATH_BASE = '/reader/api/0/'
@@ -114,6 +140,9 @@ export default class Reader {
   private tokenPost: string
   private client: string
 
+  /**
+  * Constructor description
+  */
   constructor (config) {
     if (!config.url) throw new Error('url is required')
 
@@ -149,12 +178,25 @@ export default class Reader {
     return token
   }
 
+  /**
+   * Sets the **auth** token to be used for future requests.
+   *
+   * @category Authentication
+   */
   public setAuthToken (token: string) {
     this.tokenAuth = token
   }
 
+  /**
+   * Retreives a short-lived (for CSRF protection) **post** token to be used for mutation requests.
+   * This token will be used for future requests without needing to call setPostToken().
+   * This method is automatically called once before retrying a mutation request where
+   * the API has responded with a 400 or 401 status code.
+   *
+   * @category Authentication
+   */
   public async getPostToken () {
-    if (!this.tokenAuth) throw new Error('auth token required')
+    if (!this.tokenAuth) throw new Error('auth token is not set')
 
     const res = await fetch(this.url + 'token', {
       method: 'GET',
@@ -170,10 +212,20 @@ export default class Reader {
     return body
   }
 
+  /**
+   * Sets the short-lived **post** token to be used for mutation requests.
+   *
+   * @category Authentication
+   */
   public setPostToken (token: string) {
     this.tokenPost = token
   }
 
+  /**
+   * Retrieves basic information about the currently authenticated user.
+   *
+   * @category Authentication
+   */
   public getUserInfo (): Promise<IUserInfo> {
     return this.req({
       url: this.url + 'user-info',
@@ -181,6 +233,9 @@ export default class Reader {
     })
   }
 
+  /**
+   * @category Feeds
+   */
   public async getFeeds (): Promise<IFeed[]> {
     const res = await this.req({
       url: this.url + 'subscription/list',
@@ -195,6 +250,7 @@ export default class Reader {
    *
    * @param feed - The feed's URL, or an object (or array of objects) defining both a feed URL and title. StreamId form is optional for the URL (feed/<url>). API param='s'
    * @param opts - Additional options applied to the feed(s).
+   * @category Feeds
    */
   public addFeed (feed: string | INewFeed | INewFeed[], opts: INewFeedOpts = {}) {
     if (!feed) throw new Error('url or feed object(s) required')
@@ -218,7 +274,11 @@ export default class Reader {
     return this._editFeed(params)
   }
 
-  /** Remove one or more feeds */
+  /**
+   * Removes one or more feeds.
+   *
+   * @category Feeds
+   */
   public removeFeed (streamId: string | string[]) {
     if (!streamId) throw new Error('streamId(s) required')
     if (!Array.isArray(streamId)) streamId = [streamId]
@@ -229,7 +289,11 @@ export default class Reader {
     return this._editFeed(params)
   }
 
-  /** Rename one or more feeds */
+  /**
+   * Renames one or more feeds.
+   *
+   * @category Feeds
+   */
   public renameFeed (feed: IEditFeed | IEditFeed[]): Promise<OKString> {
     if (!feed) throw new Error('feed object(s) required')
     if (!Array.isArray(feed)) feed = [feed]
@@ -244,14 +308,29 @@ export default class Reader {
     return this._editFeed(params)
   }
 
+  /**
+   * Adds a tag to one or more feeds/streams.
+   *
+   * @category Feeds
+   */
   public addFeedTag (streamId: string | string[], tag: string): Promise<OKString> {
     return this._editFeedTag(streamId, tag, 'add')
   }
 
+  /**
+   * Removes a tag from one or more feeds/streams.
+   *
+   * @category Feeds
+   */
   public removeFeedTag (streamId: string | string[], tag: string): Promise<OKString> {
     return this._editFeedTag(streamId, tag, 'remove')
   }
 
+  /**
+   * Retrieves a list of items for a feed/stream.
+   *
+   * @category Items
+   */
   public async getItems (streamId: string, opts: IGetFeedItemOpts = {}): Promise<IFeedItemList> {
     if (!streamId) throw new Error('streamId required')
 
@@ -278,6 +357,11 @@ export default class Reader {
     return res
   }
 
+  /**
+   * Retrieves a list of items having the specified item ID(s).
+   *
+   * @category Items
+   */
   public async getItemsById (itemId: string | string[]): Promise<IFeedItemList> {
     if (!itemId) throw new Error('item id(s) required')
     if (!Array.isArray(itemId)) itemId = [itemId]
@@ -299,6 +383,11 @@ export default class Reader {
     return res
   }
 
+  /**
+   * Retrieves a list of only item ID(s) for a feed/stream.
+   *
+   * @category Items
+   */
   public async getItemIds (streamId: string, opts: IGetFeedItemOpts = {}): Promise<string[]> {
     if (!streamId) throw new Error('streamId required')
 
@@ -356,8 +445,9 @@ export default class Reader {
   /**
    * Renames a tag.
    *
-   * @param tag - Current label/category name/id. StreamId form optional (user/-/label/<tag>). API param='s'
-   * @param newTag - New label/category name/id. StreamId form optional (user/-/label/<tag>). API param='dest'
+   * @param tag - Current name/id. API param='s'
+   * @param newTag - New name/id. API param='dest'
+   * @category Tags
    */
   public renameTag (tag: string, newTag: string): Promise<OKString> {
     return this.req({
@@ -371,6 +461,9 @@ export default class Reader {
     })
   }
 
+  /**
+   * Retrieves a list of feeds/streams having unread items.
+   */
   public async getUnreadCounts (): Promise<IUnreadCount[]> {
     const res = await this.req({
       url: this.url + 'unread-count',
@@ -384,6 +477,12 @@ export default class Reader {
     return res.unreadcounts
   }
 
+  /**
+   * Marks all items in the specified feed/stream as read.
+   *
+   * @param streamId - Target stream ID. API param='s'
+   * @param usMax - Timestamp (microseconds) for which only items older than this value should be marked as read. API param='dest'
+   */
   public async setAllRead (streamId: string, usMax: number): Promise<OKString> {
     if (!streamId) throw new Error('streamId required')
 
@@ -505,6 +604,7 @@ export default class Reader {
 }
 
 export class ApiError extends Error {
+  /** The HTTP status code of the response. */
   public status: number
 
   constructor (message: string, status: number) {
