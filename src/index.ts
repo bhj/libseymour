@@ -113,7 +113,6 @@ export default class Reader {
   private static TAGS = {
     'label': 'user/-/label/',
     'star': 'user/-/state/com.google/starred',
-    'read': 'user/-/state/com.google/read',
     'reading-list': 'user/-/state/com.google/reading-list',
   }
 
