@@ -124,15 +124,14 @@ export default class Reader {
   private static CLIENT = 'libseymour'
   private static PATH_BASE = '/reader/api/0/'
   private static PATH_AUTH = '/accounts/ClientLogin'
-  private static TAGS = {
-    'label': 'user/-/label/',
-    'star': 'user/-/state/com.google/starred',
-    'reading-list': 'user/-/state/com.google/reading-list',
+  private static PREFIX = {
+    FEED: 'feed/',
+    LABEL: 'user/-/label/',
+    STATE: 'user/-/state/com.google/',
   }
 
-  private static PREFIX_FEED = 'feed/'
-  private static PREFIX_FEED_REGEXP = new RegExp(`^${Reader.PREFIX_FEED}`, 'i')
-  private static PREFIX_LABEL_REGEXP = new RegExp(`^${Reader.TAGS.label}`, 'i')
+  private static PREFIX_FEED_REGEXP = new RegExp(`^${Reader.PREFIX.FEED}`, 'i')
+  private static PREFIX_LABEL_REGEXP = new RegExp(`^${Reader.PREFIX.LABEL}`, 'i')
 
   private url: string
   private urlAuth: string
@@ -257,18 +256,18 @@ export default class Reader {
     const params = new URLSearchParams({ ac: 'subscribe' })
 
     if (typeof feed === 'string') {
-      params.append('s', Reader.PREFIX_FEED + feed.replace(Reader.PREFIX_FEED_REGEXP, ''))
+      params.append('s', Reader.PREFIX.FEED + feed.replace(Reader.PREFIX_FEED_REGEXP, ''))
     } else {
       if (!Array.isArray(feed)) feed = [feed]
 
       feed.forEach((f) => {
-        params.append('s', Reader.PREFIX_FEED + f.url.replace(Reader.PREFIX_FEED_REGEXP, ''))
+        params.append('s', Reader.PREFIX.FEED + f.url.replace(Reader.PREFIX_FEED_REGEXP, ''))
         params.append('t', f.title ?? '')
       })
     }
 
     if (opts.tag) {
-      params.append('a', Reader.TAGS.label + opts.tag.replace(Reader.PREFIX_LABEL_REGEXP, ''))
+      params.append('a', Reader.PREFIX.LABEL + opts.tag.replace(Reader.PREFIX_LABEL_REGEXP, ''))
     }
 
     return this._editFeed(params)
@@ -284,7 +283,7 @@ export default class Reader {
     if (!Array.isArray(streamId)) streamId = [streamId]
 
     const params = new URLSearchParams({ ac: 'unsubscribe' })
-    streamId.forEach(id => params.append('s', Reader.PREFIX_FEED + id.replace(Reader.PREFIX_FEED_REGEXP, '')))
+    streamId.forEach(id => params.append('s', Reader.PREFIX.FEED + id.replace(Reader.PREFIX_FEED_REGEXP, '')))
 
     return this._editFeed(params)
   }
@@ -301,7 +300,7 @@ export default class Reader {
     const params = new URLSearchParams({ ac: 'edit' })
 
     feed.forEach((f) => {
-      params.append('s', Reader.PREFIX_FEED + f.id.replace(Reader.PREFIX_FEED_REGEXP, ''))
+      params.append('s', Reader.PREFIX.FEED + f.id.replace(Reader.PREFIX_FEED_REGEXP, ''))
       params.append('t', f.title ?? '')
     })
 
@@ -454,8 +453,8 @@ export default class Reader {
       method: 'POST',
       url: this.url + 'rename-tag',
       params: {
-        s: Reader.TAGS.label + tag.replace(Reader.PREFIX_LABEL_REGEXP, ''),
-        dest: Reader.TAGS.label + newTag.replace(Reader.PREFIX_LABEL_REGEXP, ''),
+        s: Reader.PREFIX.LABEL + tag.replace(Reader.PREFIX_LABEL_REGEXP, ''),
+        dest: Reader.PREFIX.LABEL + newTag.replace(Reader.PREFIX_LABEL_REGEXP, ''),
       },
       type: 'text',
     })
@@ -515,7 +514,7 @@ export default class Reader {
     const params = new URLSearchParams({ ac: 'edit' })
 
     streamId.forEach((id) => {
-      params.append('s', Reader.PREFIX_FEED + id.replace(Reader.PREFIX_FEED_REGEXP, ''))
+      params.append('s', Reader.PREFIX.FEED + id.replace(Reader.PREFIX_FEED_REGEXP, ''))
     })
 
     if (mode === 'add') params.append('a', tag)
