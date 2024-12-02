@@ -17,13 +17,6 @@ export interface IEditFeed {
   title: string
 }
 
-export interface IEditFeedTagOpts {
-  /** Add label/category to feed(s). StreamId form optional (user/-/label/<tagname>). API param='a' */
-  add?: string
-  /** Remove label/category from feed(s). StreamId form optional (user/-/label/<tagname>). API param='r' */
-  remove?: string
-}
-
 export interface IGetFeedItemOpts {
   /** Continuation key from a previous request, used to fetch the next batch. API param='c' */
   continuation?: string
@@ -37,11 +30,6 @@ export interface IGetFeedItemOpts {
   num?: number
   /** Date sort order. Default='desc'; API param='r' */
   sort?: 'asc' | 'desc'
-}
-
-export interface IAllReadOpts {
-  /** Exclude items newer than this timestamp (microseconds); API param='ts' */
-  usMax?: number
 }
 
 export interface IFeed {
