@@ -2,5 +2,13 @@
   "$schema": "https://typedoc.org/schema.json",
   "entryPoints": ["./src/index.ts"],
   "plugin": ["typedoc-plugin-merge-modules"],
+  "defaultCategory": "General",
+  "categoryOrder": ["General", "*"],
   "disableSources": true,
+  "sort": ["kind", "source-order"],
+  "visibilityFilters": {},
+  "headings": {
+      "readme": false,
+      "document": true,
+  },
 }
