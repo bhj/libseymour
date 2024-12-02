@@ -308,21 +308,21 @@ export default class Reader {
   }
 
   /**
-   * Adds a tag to one or more feeds/streams.
+   * Adds a user tag (often a "category" or "folder") to one or more feeds.
    *
    * @category Feeds
    */
-  public addFeedTag (streamId: string | string[], tag: string): Promise<OKString> {
-    return this._editFeedTag(streamId, tag, 'add')
+  public addFeedTag (feed: string | string[], tag: string): Promise<OKString> {
+    return this._editFeedTag(feed, tag, 'add')
   }
 
   /**
-   * Removes a tag from one or more feeds/streams.
+   * Removes a user tag (often a "category" or "folder") from one or more feeds.
    *
    * @category Feeds
    */
-  public removeFeedTag (streamId: string | string[], tag: string): Promise<OKString> {
-    return this._editFeedTag(streamId, tag, 'remove')
+  public removeFeedTag (feed: string | string[], tag: string): Promise<OKString> {
+    return this._editFeedTag(feed, tag, 'remove')
   }
 
   /**
@@ -410,7 +410,7 @@ export default class Reader {
   }
 
   /**
-   * Adds a tag to the specified item.
+   * Adds a user tag (often a "label") to the specified item.
    *
    * @category Items
    */
@@ -419,7 +419,7 @@ export default class Reader {
   }
 
   /**
-   * Removes a tag from the specified item.
+   * Removes a user tag (often a "label") from the specified item.
    *
    * @category Items
    */
@@ -442,7 +442,7 @@ export default class Reader {
   }
 
   /**
-   * Renames a tag.
+   * Renames a user-created tag.
    *
    * @param tag - Current name/id. API param='s'
    * @param newTag - New name/id. API param='dest'
@@ -507,13 +507,13 @@ export default class Reader {
     })
   }
 
-  private _editFeedTag (streamId: string | string[], tag: string, mode: 'add' | 'remove'): Promise<OKString> {
-    if (!streamId) throw new Error('streamId(s) required')
-    if (!Array.isArray(streamId)) streamId = [streamId]
+  private _editFeedTag (feed: string | string[], tag: string, mode: 'add' | 'remove'): Promise<OKString> {
+    if (!feed) throw new Error('no feed(s) specified')
+    if (!Array.isArray(feed)) feed = [feed]
 
     const params = new URLSearchParams({ ac: 'edit' })
 
-    streamId.forEach((id) => {
+    feed.forEach((id) => {
       params.append('s', Reader.PREFIX.FEED + id.replace(Reader.PREFIX_FEED_REGEXP, ''))
     })
 
