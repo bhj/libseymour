@@ -98,6 +98,7 @@ export interface IUserInfo {
 }
 
 export type OKString = Promise<'OK'>
+export type StreamType = keyof typeof Reader.STREAM_TYPES
 
 /**
  * Class documentation
@@ -121,17 +122,19 @@ export type OKString = Promise<'OK'>
  * as feeds/streams (typically as categories, folders, or states).
  */
 export default class Reader {
-  private static CLIENT = 'libseymour'
-  private static PATH_BASE = '/reader/api/0/'
-  private static PATH_AUTH = '/accounts/ClientLogin'
-  private static PREFIX = {
+  /**
+   * @hidden
+   */
+  public static STREAM_TYPES = {
     FEED: 'feed/',
     LABEL: 'user/-/label/',
     STATE: 'user/-/state/com.google/',
-  }
+  } as const
 
-  private static PREFIX_FEED_REGEXP = new RegExp(`^${Reader.PREFIX.FEED}`, 'i')
-  private static PREFIX_LABEL_REGEXP = new RegExp(`^${Reader.PREFIX.LABEL}`, 'i')
+  private static CLIENT = 'libseymour'
+  private static PATH_BASE = '/reader/api/0/'
+  private static PATH_AUTH = '/accounts/ClientLogin'
+  private static STREAM_PREFIXES = Object.values(Reader.STREAM_TYPES)
 
   private url: string
   private urlAuth: string
@@ -256,18 +259,18 @@ export default class Reader {
     const params = new URLSearchParams({ ac: 'subscribe' })
 
     if (typeof feed === 'string') {
-      params.append('s', Reader.PREFIX.FEED + feed.replace(Reader.PREFIX_FEED_REGEXP, ''))
+      params.append('s', Reader.ensureStream(feed, 'FEED'))
     } else {
       if (!Array.isArray(feed)) feed = [feed]
 
       feed.forEach((f) => {
-        params.append('s', Reader.PREFIX.FEED + f.url.replace(Reader.PREFIX_FEED_REGEXP, ''))
+        params.append('s', Reader.ensureStream(f.url, 'FEED'))
         params.append('t', f.title ?? '')
       })
     }
 
     if (opts.tag) {
-      params.append('a', Reader.PREFIX.LABEL + opts.tag.replace(Reader.PREFIX_LABEL_REGEXP, ''))
+      params.append('a', Reader.ensureStream(opts.tag, 'LABEL'))
     }
 
     return this._editFeed(params)
@@ -278,12 +281,12 @@ export default class Reader {
    *
    * @category Feeds
    */
-  public removeFeed (streamId: string | string[]) {
-    if (!streamId) throw new Error('streamId(s) required')
-    if (!Array.isArray(streamId)) streamId = [streamId]
+  public removeFeed (feed: string | string[]) {
+    if (!feed) throw new Error('no feed(s) specified')
+    if (!Array.isArray(feed)) feed = [feed]
 
     const params = new URLSearchParams({ ac: 'unsubscribe' })
-    streamId.forEach(id => params.append('s', Reader.PREFIX.FEED + id.replace(Reader.PREFIX_FEED_REGEXP, '')))
+    feed.forEach(id => params.append('s', Reader.ensureStream(id, 'FEED')))
 
     return this._editFeed(params)
   }
@@ -300,7 +303,7 @@ export default class Reader {
     const params = new URLSearchParams({ ac: 'edit' })
 
     feed.forEach((f) => {
-      params.append('s', Reader.PREFIX.FEED + f.id.replace(Reader.PREFIX_FEED_REGEXP, ''))
+      params.append('s', Reader.ensureStream(f.id, 'FEED'))
       params.append('t', f.title ?? '')
     })
 
@@ -453,8 +456,8 @@ export default class Reader {
       method: 'POST',
       url: this.url + 'rename-tag',
       params: {
-        s: Reader.PREFIX.LABEL + tag.replace(Reader.PREFIX_LABEL_REGEXP, ''),
-        dest: Reader.PREFIX.LABEL + newTag.replace(Reader.PREFIX_LABEL_REGEXP, ''),
+        s: Reader.ensureStream(tag, 'LABEL'),
+        dest: Reader.ensureStream(newTag, 'LABEL'),
       },
       type: 'text',
     })
@@ -483,7 +486,7 @@ export default class Reader {
    * @param usMax - Timestamp (microseconds) for which only items older than this value should be marked as read. API param='dest'
    */
   public async setAllRead (streamId: string, usMax: number): Promise<OKString> {
-    if (!streamId) throw new Error('streamId required')
+    if (!Reader.STREAM_PREFIXES.some(p => streamId.startsWith(p))) throw new Error(`Stream ID required (got '${streamId}')`)
 
     const params = {
       s: streamId,
@@ -496,6 +499,21 @@ export default class Reader {
       params,
       type: 'text',
     })
+  }
+
+  /**
+   * A utility method to ensure a string is in Stream ID form. If it is, the string is returned verbatim.
+   * If not, the specified stream type's prefix is prepended.
+   * @param - The input string.
+   * @param - The desired Stream ID form, only if the input is not already in Stream ID form.
+   */
+  public static ensureStream (input: string, type: StreamType): string {
+    if (Reader.STREAM_PREFIXES.some(p => input.startsWith(p))) return input
+
+    const prefix = Reader.STREAM_TYPES[type]
+    if (!prefix) throw new Error('invalid stream type')
+
+    return `${prefix}${input}`
   }
 
   private _editFeed (params): Promise<OKString> {
@@ -514,11 +532,11 @@ export default class Reader {
     const params = new URLSearchParams({ ac: 'edit' })
 
     feed.forEach((id) => {
-      params.append('s', Reader.PREFIX.FEED + id.replace(Reader.PREFIX_FEED_REGEXP, ''))
+      params.append('s', Reader.ensureStream(id, 'FEED'))
     })
 
-    if (mode === 'add') params.append('a', tag)
-    if (mode === 'remove') params.append('r', tag)
+    if (mode === 'add') params.append('a', Reader.ensureStream(tag, 'LABEL'))
+    if (mode === 'remove') params.append('r', Reader.ensureStream(tag, 'LABEL'))
 
     return this._editFeed(params)
   }
@@ -532,7 +550,10 @@ export default class Reader {
     const params = new URLSearchParams(itemId.map(id => ['i', id]))
     const tagMode = mode === 'add' ? 'a' : 'r'
 
-    tag.forEach(t => params.append(tagMode, t))
+    tag.forEach((t) => {
+      if (!Reader.STREAM_PREFIXES.some(p => t.startsWith(p))) throw new Error(`tags must be in Stream ID form (got '${t}')`)
+      params.append(tagMode, t)
+    })
 
     return this.req({
       method: 'POST',
