@@ -13,7 +13,7 @@ export interface INewFeed {
 }
 
 export interface IEditFeed {
-  /** Feed URL or streamId. API param='s' */
+  /** The feed's ID or URL. Stream ID form optional. API param='s' */
   id: string
   /** Feed display name/title. API param='t' */
   title: string
@@ -104,12 +104,12 @@ export type StreamType = keyof typeof Reader.STREAM_TYPES
  * Clients authenticate using API tokens. The *auth* token is used for basic
  * requests (typically HTTP GET) while the *post* token is shorter-lived (to
  * protect against CSRF) and used for mutations (typically HTTP POST).
-
+ *
  * @categoryDescription Feeds
  * Feeds represent RSS/Atom URLs and contain a list of *items*. The API often
  * returns feeds in their *stream ID* form ```feed/<feed url>```, but this form
  * is optional when providing feed URLs using this library.
-
+ *
  * @categoryDescription Items
  * Items represent individual articles/posts from a given *stream* (feed, tag, etc.)
  *
@@ -119,9 +119,7 @@ export type StreamType = keyof typeof Reader.STREAM_TYPES
  * as feeds/streams (typically as categories, folders, or states).
  */
 export default class Reader {
-  /**
-   * @hidden
-   */
+  /** @hidden */
   public static STREAM_TYPES = {
     FEED: 'feed/',
     LABEL: 'user/-/label/',
@@ -140,8 +138,8 @@ export default class Reader {
   private client: string
 
   /**
-  * Constructor description
-  */
+   * Constructor description
+   */
   constructor (config) {
     if (!config.url) throw new Error('url is required')
 
@@ -151,11 +149,11 @@ export default class Reader {
   }
 
   /**
-    * Retreives an **auth** token for the specified username/password combination.
-    * This token will be used for future requests without needing to call setAuthToken().
-    *
-    * @category Authentication
-    */
+   * Retreives an **auth** token for the specified username/password combination.
+   * This token will be used for future requests without needing to call setAuthToken().
+   *
+   * @category Authentication
+   */
   public async getAuthToken (username: string, password: string) {
     if (!username || !password) {
       throw new Error('missing username or password')
@@ -221,7 +219,7 @@ export default class Reader {
   }
 
   /**
-   * Retrieves basic information about the currently authenticated user.
+   * Retrieves basic information about the currently-authenticated user.
    *
    * @category Authentication
    */
@@ -274,6 +272,7 @@ export default class Reader {
   /**
    * Removes one or more feeds.
    *
+   * @param feed - A feed ID or URL, or an array of feed IDs or URLs. Stream ID form optional. API param='s'
    * @category Feeds
    */
   public removeFeed (feed: string | string[]) {
@@ -324,12 +323,14 @@ export default class Reader {
   }
 
   /**
-   * Retrieves a list of items for a feed/stream.
+   * Retrieves a list of items for a stream.
    *
+   * @param streamId - A Stream ID. If the value is not in Stream ID form (e.g. a URL instead)
+   * it is assumed to be a feed.
    * @category Items
    */
   public async getItems (streamId: string, opts: IGetFeedItemOpts = {}): Promise<IFeedItemList> {
-    if (!streamId) throw new Error('streamId required')
+    if (!streamId) throw new Error('Stream ID required')
 
     const params = {
       c: opts.continuation || undefined,
@@ -355,7 +356,7 @@ export default class Reader {
   }
 
   /**
-   * Retrieves a list of items having the specified item ID(s).
+   * Retrieves a list of items having the specified item IDs.
    *
    * @category Items
    */
@@ -381,12 +382,14 @@ export default class Reader {
   }
 
   /**
-   * Retrieves a list of only item ID(s) for a feed/stream.
+   * Retrieves a list of item IDs for a stream.
    *
+   * @param streamId - A Stream ID. If the value is not in Stream ID form (e.g. a URL instead)
+   * it is assumed to be a feed.
    * @category Items
    */
   public async getItemIds (streamId: string, opts: IGetFeedItemOpts = {}): Promise<string[]> {
-    if (!streamId) throw new Error('streamId required')
+    if (!streamId) throw new Error('feed URL or Stream ID required')
 
     const params = {
       s: Reader.ensureStream(streamId, 'FEED'),
@@ -408,8 +411,10 @@ export default class Reader {
   }
 
   /**
-   * Adds a user tag (often a "label") to the specified item.
+   * Adds one or more tags (user-created or state) to the specified item(s).
    *
+   * @param itemId - The item's ID, or an array of item IDs.
+   * @param tag - The tag, or an array of tags, to remove. Stream ID form required.
    * @category Items
    */
   public addItemTag (itemId: string | string[], tag: string | string[]) {
@@ -417,8 +422,10 @@ export default class Reader {
   }
 
   /**
-   * Removes a user tag (often a "label") from the specified item.
+   * Removes one or more tag (user-created or state) from the specified item(s).
    *
+   * @param itemId - The item's ID, or an array of item IDs.
+   * @param tag - The tag, or an array of tags, to remove. Stream ID form required.
    * @category Items
    */
   public removeItemTag (itemId: string | string[], tag: string | string[]) {
@@ -440,10 +447,10 @@ export default class Reader {
   }
 
   /**
-   * Renames a user-created tag.
+   * Renames a user-created tag (often a "category" or "folder" for a feed, or "label" for an item)
    *
-   * @param tag - Current name/id. API param='s'
-   * @param newTag - New name/id. API param='dest'
+   * @param tag - Current tag name/id. Stream ID form optional. API param='s'
+   * @param newTag - New tag name/id. Stream ID form optional. API param='dest'
    * @category Tags
    */
   public renameTag (tag: string, newTag: string): Promise<OKString> {
@@ -459,7 +466,7 @@ export default class Reader {
   }
 
   /**
-   * Retrieves a list of feeds/streams having unread items.
+   * Retrieves a list of streams having unread items.
    */
   public async getUnreadCounts (): Promise<IUnreadCount[]> {
     const res = await this.req({
@@ -475,9 +482,9 @@ export default class Reader {
   }
 
   /**
-   * Marks all items in the specified feed/stream as read.
+   * Marks all items in the specified stream as read.
    *
-   * @param streamId - Target stream ID. API param='s'
+   * @param streamId - The target Stream ID. This can generally be a feed, user-created tag, or state. API param='s'
    * @param usMax - Timestamp (microseconds) for which only items older than this value should be marked as read. API param='dest'
    */
   public async setAllRead (streamId: string, usMax: number): Promise<OKString> {
@@ -499,6 +506,7 @@ export default class Reader {
   /**
    * A utility method to ensure a string is in Stream ID form. If it is, the string is returned verbatim.
    * If not, the specified stream type's prefix is prepended.
+   *
    * @param - The input string.
    * @param - The desired Stream ID form, only if the input is not already in Stream ID form.
    */
