@@ -341,7 +341,7 @@ export default class Reader {
     }
 
     const res = await this.req({
-      url: this.url + 'stream/contents/' + encodeURIComponent(streamId),
+      url: this.url + 'stream/contents/' + encodeURIComponent(Reader.ensureStream(streamId, 'FEED')),
       params,
       type: 'json',
     })
@@ -389,7 +389,7 @@ export default class Reader {
     if (!streamId) throw new Error('streamId required')
 
     const params = {
-      s: streamId,
+      s: Reader.ensureStream(streamId, 'FEED'),
       c: opts.continuation || undefined,
       n: typeof opts.num === 'number' ? opts.num : 50,
       r: opts.sort === 'asc' ? 'o' : 'd',
