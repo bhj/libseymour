@@ -4,14 +4,11 @@
  */
 
 export interface INewFeed {
-  /** Feed URL. StreamId form optional (feed/<url>). API param='s' */
+  /** The feed's URL. Stream ID form optional. API param='s' */
   url: string
   /** Feed display name/title. API param='t' */
   title?: string
-}
-
-export interface INewFeedOpts {
-  /** Label/category name/id. StreamId form optional (user/-/label/<tag>). Created if it doesn't exist. API param='a' */
+  /** A user tag (often "category" or "folder"), created if it doesn't exist. Stream ID form optional. API param='a' */
   tag?: string
 }
 
@@ -250,27 +247,25 @@ export default class Reader {
   /**
    * Adds a feed.
    *
-   * @param feed - The feed's URL, or an object (or array of objects) defining both a feed URL and title. StreamId form is optional for the URL (feed/<url>). API param='s'
-   * @param opts - Additional options applied to the feed(s).
+   * Note: While the original API supported multiple feeds and tags in a single request,
+   * support by contemporary aggregators varies. For simplicity, this method handles one
+   * feed and (optional) tag at a time.
+   *
+   * @param feed - The feed's URL, or an object with `url`, `title` (optional) and `tag` (optional).
    * @category Feeds
    */
-  public addFeed (feed: string | INewFeed | INewFeed[], opts: INewFeedOpts = {}) {
-    if (!feed) throw new Error('url or feed object(s) required')
+  public addFeed (feed: string | INewFeed) {
+    if (!['string', 'object'].includes(typeof feed)) throw new Error('url or feed object required')
+
+    const url = typeof feed === 'string' ? feed : feed?.url
+    if (!url) throw new Error('url required')
+
     const params = new URLSearchParams({ ac: 'subscribe' })
+    params.append('s', Reader.ensureStream(url, 'FEED'))
 
-    if (typeof feed === 'string') {
-      params.append('s', Reader.ensureStream(feed, 'FEED'))
-    } else {
-      if (!Array.isArray(feed)) feed = [feed]
-
-      feed.forEach((f) => {
-        params.append('s', Reader.ensureStream(f.url, 'FEED'))
-        params.append('t', f.title ?? '')
-      })
-    }
-
-    if (opts.tag) {
-      params.append('a', Reader.ensureStream(opts.tag, 'LABEL'))
+    if (typeof feed === 'object') {
+      if (feed.title) params.append('t', feed.title)
+      if (feed.tag) params.append('a', Reader.ensureStream(feed.tag, 'LABEL'))
     }
 
     return this._editFeed(params)
