@@ -4,33 +4,33 @@
  */
 
 export interface INewFeed {
-  /** The feed's URL. Stream ID form optional. API param='s' */
+  /** The feed's URL. Stream ID form optional. (param=`s`) */
   url: string
-  /** Feed display name/title. API param='t' */
+  /** Feed display name/title. (param=`t`) */
   title?: string
-  /** A user tag (often "category" or "folder"), created if it doesn't exist. Stream ID form optional. API param='a' */
+  /** A user tag (often "category" or "folder"), created if it doesn't exist. Stream ID form optional. (param=`a`) */
   tag?: string
 }
 
 export interface IEditFeed {
-  /** The feed's ID or URL. Stream ID form optional. API param='s' */
+  /** The feed's ID or URL. Stream ID form optional. (param=`s`) */
   id: string
-  /** Feed display name/title. API param='t' */
+  /** Feed display name/title. (param=`t`) */
   title: string
 }
 
 export interface IGetFeedItemOpts {
-  /** Continuation key from a previous request, used to fetch the next batch. API param='c' */
+  /** Continuation key from a previous request, used to fetch the next batch. (param=`c`) */
   continuation?: string
-  /** Exclude a streamId. API param='xt' */
+  /** Exclude a streamId. (param=`xt`) */
   exclude?: string
-  /** Exclude items newer than this timestamp (seconds); API param='nt' */
+  /** Exclude items newer than this timestamp (seconds). (param=`nt`) */
   sMax?: number
-  /** Exclude items older than this timestamp (seconds); API param='ot' */
+  /** Exclude items older than this timestamp (seconds). (param=`ot`) */
   sMin?: number
-  /** Number of items per request. Default=50; API param='n' */
+  /** Number of items per request. Default: `50` (param=`n`) */
   num?: number
-  /** Date sort order. Default='desc'; API param='r' */
+  /** Date sort order. Default: `desc` (param=`r`) */
   sort?: 'asc' | 'desc'
 }
 
@@ -150,7 +150,7 @@ export default class Reader {
 
   /**
    * Retreives an **auth** token for the specified username/password combination.
-   * This token will be used for future requests without needing to call setAuthToken().
+   * This token will be used for future requests without needing to call {@link setAuthToken}.
    *
    * @category Authentication
    */
@@ -185,15 +185,16 @@ export default class Reader {
   }
 
   /**
-   * Retreives a short-lived (for CSRF protection) **post** token to be used for mutation requests.
-   * This token will be used for future requests without needing to call setPostToken().
+   * Retreives a short-lived (for CSRF protection) **post** token to be used for mutation requests. (`GET /token`)
+   *
+   * This token will be used for future requests without needing to call {@link setPostToken}.
    * This method is automatically called once before retrying a mutation request where
    * the API has responded with a 400 or 401 status code.
    *
    * @category Authentication
    */
   public async getPostToken () {
-    if (!this.tokenAuth) throw new Error('auth token is not set')
+    if (!this.tokenAuth) throw new Error('no auth token; use getAuthToken() or setAuthToken() first')
 
     const res = await fetch(this.url + 'token', {
       method: 'GET',
@@ -219,7 +220,7 @@ export default class Reader {
   }
 
   /**
-   * Retrieves basic information about the currently-authenticated user.
+   * Retrieves basic information about the currently-authenticated user. (`GET /user-info`)
    *
    * @category Authentication
    */
@@ -231,6 +232,8 @@ export default class Reader {
   }
 
   /**
+   * Retrieves a list of available feeds and streams. (`GET /subscription/list`)
+   *
    * @category Feeds
    */
   public async getFeeds (): Promise<IFeed[]> {
@@ -243,7 +246,7 @@ export default class Reader {
   }
 
   /**
-   * Adds a feed.
+   * Adds a feed. (`POST /subscription/edit`)
    *
    * Note: While the original API supported multiple feeds and tags in a single request,
    * support by contemporary aggregators varies. For simplicity, this method handles one
@@ -272,7 +275,7 @@ export default class Reader {
   /**
    * Removes one or more feeds.
    *
-   * @param feed - A feed ID or URL, or an array of feed IDs or URLs. Stream ID form optional. API param='s'
+   * @param feed - A feed ID or URL, or an array of feed IDs or URLs. Stream ID form optional. (param=`s`)
    * @category Feeds
    */
   public removeFeed (feed: string | string[]) {
@@ -288,6 +291,7 @@ export default class Reader {
   /**
    * Renames one or more feeds.
    *
+   * @param feed - An object, or an array of objects, with a feed's `id` and new `title`.
    * @category Feeds
    */
   public renameFeed (feed: IEditFeed | IEditFeed[]): Promise<OKString> {
@@ -305,8 +309,10 @@ export default class Reader {
   }
 
   /**
-   * Adds a user tag (often a "category" or "folder") to one or more feeds.
+   * Adds a user-created tag (often a "category" or "folder") to one or more feeds. (`POST /subscription/edit`)
    *
+   * @param feed - A feed ID or URL, or an array of feed IDs or URLs. Stream ID form optional. (param=`s`)
+   * @param tag - The tag name/id to remove. Stream ID form optional. (param=`a`)
    * @category Feeds
    */
   public addFeedTag (feed: string | string[], tag: string): Promise<OKString> {
@@ -314,8 +320,10 @@ export default class Reader {
   }
 
   /**
-   * Removes a user tag (often a "category" or "folder") from one or more feeds.
+   * Removes a user-created tag (often a "category" or "folder") from one or more feeds. (`POST /subscription/edit`)
    *
+   * @param feed - A feed ID or URL, or an array of feed IDs or URLs. Stream ID form optional. (param=`s`)
+   * @param tag - The tag name/id to remove. Stream ID form optional. (param=`r`)
    * @category Feeds
    */
   public removeFeedTag (feed: string | string[], tag: string): Promise<OKString> {
@@ -323,10 +331,11 @@ export default class Reader {
   }
 
   /**
-   * Retrieves a list of items for a stream.
+   * Retrieves a list of items for a given stream. (`GET /stream/contents/<streamId>`)
    *
-   * @param streamId - A Stream ID. If the value is not in Stream ID form (e.g. a URL instead)
-   * it is assumed to be a feed.
+   * @param streamId - A Stream ID. If the provided value is not in Stream ID form it's assumed
+   * to refer to a feed ID or URL.
+   * @param opts - Additional options for the request.
    * @category Items
    */
   public async getItems (streamId: string, opts: IGetFeedItemOpts = {}): Promise<IFeedItemList> {
@@ -356,12 +365,16 @@ export default class Reader {
   }
 
   /**
-   * Retrieves a list of items having the specified item IDs.
+   * Retrieves a list of items having the specified item IDs. (POST `/stream/items/contents`)
    *
+   * Note: POST is used to avoid URI length limits when requesting many items. A post token
+   * should not be required since no mutations are performed.
+   *
+   * @param itemId - The item ID, or an array of item IDs. (param=`i`)
    * @category Items
    */
   public async getItemsById (itemId: string | string[]): Promise<IFeedItemList> {
-    if (!itemId) throw new Error('item id(s) required')
+    if (!itemId) throw new Error('item ID(s) required')
     if (!Array.isArray(itemId)) itemId = [itemId]
 
     const params = new URLSearchParams(itemId.map(id => ['i', id]))
@@ -382,14 +395,15 @@ export default class Reader {
   }
 
   /**
-   * Retrieves a list of item IDs for a stream.
+   * Retrieves a list of item IDs for a given stream. (`GET /stream/items/ids`)
    *
-   * @param streamId - A Stream ID. If the value is not in Stream ID form (e.g. a URL instead)
-   * it is assumed to be a feed.
+   * @param streamId - A Stream ID. If the provided value is not in Stream ID form (e.g.
+   * a URL instead) it's assumed to refer to a feed. (param=`s`)
+   * @param opts - Additional options for the request.
    * @category Items
    */
   public async getItemIds (streamId: string, opts: IGetFeedItemOpts = {}): Promise<string[]> {
-    if (!streamId) throw new Error('feed URL or Stream ID required')
+    if (!streamId) throw new Error('Stream ID required')
 
     const params = {
       s: Reader.ensureStream(streamId, 'FEED'),
@@ -411,10 +425,11 @@ export default class Reader {
   }
 
   /**
-   * Adds one or more tags (user-created or state) to the specified item(s).
+   * Adds one or more tags (user-created or state) to the specified item(s). (`POST /edit-tag`)
    *
-   * @param itemId - The item's ID, or an array of item IDs.
-   * @param tag - The tag, or an array of tags, to remove. Stream ID form required.
+   * @param itemId - The item's ID, or an array of item IDs. (param=`i`)
+   * @param tag - The tag, or an array of tags, to remove. Stream ID form is required, since both
+    * user-created and state tags can be referenced. (param=`a`)
    * @category Items
    */
   public addItemTag (itemId: string | string[], tag: string | string[]) {
@@ -422,10 +437,11 @@ export default class Reader {
   }
 
   /**
-   * Removes one or more tag (user-created or state) from the specified item(s).
+   * Removes one or more tag (user-created or state) from the specified item(s). (`POST /edit-tag`)
    *
-   * @param itemId - The item's ID, or an array of item IDs.
-   * @param tag - The tag, or an array of tags, to remove. Stream ID form required.
+   * @param itemId - The item's ID, or an array of item IDs. (param=`i`)
+   * @param tag - The tag, or an array of tags, to remove. Stream ID form is required, since both
+   * user-created and state tags can be referenced. (param=`r`)
    * @category Items
    */
   public removeItemTag (itemId: string | string[], tag: string | string[]) {
@@ -433,7 +449,7 @@ export default class Reader {
   }
 
   /**
-   * Retrieves a list of available tags.
+   * Retrieves a list of available tags. (`GET /tag/list`)
    *
    * @category Tags
    */
@@ -447,10 +463,11 @@ export default class Reader {
   }
 
   /**
-   * Renames a user-created tag (often a "category" or "folder" for a feed, or "label" for an item)
+   * Renames a user-created tag (often a "category" or "folder" for a feed, or "label" for an item).
+   * (`POST /rename-tag`)
    *
-   * @param tag - Current tag name/id. Stream ID form optional. API param='s'
-   * @param newTag - New tag name/id. Stream ID form optional. API param='dest'
+   * @param tag - Current tag name/id. Stream ID form optional. (param=`s`)
+   * @param newTag - New tag name/id. Stream ID form optional. (param=`dest`)
    * @category Tags
    */
   public renameTag (tag: string, newTag: string): Promise<OKString> {
@@ -466,7 +483,7 @@ export default class Reader {
   }
 
   /**
-   * Retrieves a list of streams having unread items.
+   * Retrieves a list of streams having unread items. (`GET /unread-count`)
    */
   public async getUnreadCounts (): Promise<IUnreadCount[]> {
     const res = await this.req({
@@ -482,13 +499,13 @@ export default class Reader {
   }
 
   /**
-   * Marks all items in the specified stream as read.
+   * Marks all items in the specified stream as read. (`POST /mark-all-as-read`)
    *
-   * @param streamId - The target Stream ID. This can generally be a feed, user-created tag, or state. API param='s'
-   * @param usMax - Timestamp (microseconds) for which only items older than this value should be marked as read. API param='dest'
+   * @param streamId - The target Stream ID. This can generally be a feed, user-created tag, or state. (param=`s`)
+   * @param usMax - Timestamp (microseconds) for which only items older than this value should be marked as read. (param=`dest`)
    */
   public async setAllRead (streamId: string, usMax: number): Promise<OKString> {
-    if (!Reader.STREAM_PREFIXES.some(p => streamId.startsWith(p))) throw new Error(`Stream ID required (got '${streamId}')`)
+    if (!Reader.STREAM_PREFIXES.some(p => streamId.startsWith(p))) throw new Error(`invalid Stream ID (got '${streamId}')`)
 
     const params = {
       s: streamId,
@@ -507,8 +524,9 @@ export default class Reader {
    * A utility method to ensure a string is in Stream ID form. If it is, the string is returned verbatim.
    * If not, the specified stream type's prefix is prepended.
    *
-   * @param - The input string.
-   * @param - The desired Stream ID form, only if the input is not already in Stream ID form.
+   * @param input - The input string.
+   * @param type - The desired Stream ID form, only if the input is not already in Stream ID form.
+   * @category Utility
    */
   public static ensureStream (input: string, type: StreamType): string {
     if (Reader.STREAM_PREFIXES.some(p => input.startsWith(p))) return input
