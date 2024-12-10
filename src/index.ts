@@ -140,7 +140,7 @@ export default class Reader {
   } as const
 
   private static CLIENT = 'libseymour'
-  private static PATH_BASE = '/reader/api/0/'
+  private static PATH_API = '/reader/api/0/'
   private static PATH_AUTH = '/accounts/ClientLogin'
   private static STREAM_PREFIXES = Object.values(Reader.STREAM_TYPES)
 
@@ -149,6 +149,7 @@ export default class Reader {
   private tokenAuth: string
   private tokenPost: string
   private client: string
+  private autoPostToken: boolean
 
   /**
    * Instantiates a new Reader.
@@ -163,9 +164,10 @@ export default class Reader {
   constructor (config: IConfig) {
     if (!config.url) throw new Error('url is required')
 
-    this.url = config.url + Reader.PATH_BASE
+    this.url = config.url + Reader.PATH_API
     this.urlAuth = config.url + Reader.PATH_AUTH
     this.client = config.client || Reader.CLIENT
+    this.autoPostToken = config.autoPostToken ?? true
   }
 
   /**
@@ -208,8 +210,8 @@ export default class Reader {
    * Retreives a short-lived (for CSRF protection) **post** token to be used for mutation requests. (`GET /token`)
    *
    * This token will be used for future requests without needing to call {@link setPostToken}.
-   * This method is automatically called once before retrying a mutation request where
-   * the API has responded with a 400 or 401 status code.
+   * This method will automatically be called once before retrying a mutation request where
+   * the API has responded with a 400 or 401 status code, unless {@link IConfig#autoPostToken} is `false`.
    *
    * @category Authentication
    */
@@ -644,7 +646,7 @@ export default class Reader {
       return res
     }
 
-    if (method === 'POST' && !isRetry && (res.status === 400 || res.status === 401)) {
+    if (method === 'POST' && this.autoPostToken && !isRetry && [400, 401].includes(res.status)) {
       console.log(`got ${res.status}; requesting token`)
       await this.getPostToken()
 
