@@ -3,6 +3,19 @@
  * @module
  */
 
+/** The configuration options for instantiating a new {@link Reader}.
+  * @inline
+  */
+export interface IConfig {
+  /** The base API URL. The main (`/reader/api/0/`) and auth (`/accounts/ClientLogin) endpoint paths will be appended. */
+  url: string
+  /** The name to identify as when making requests. Default: `libseymour`. */
+  client?: string
+  /** Whether to automatically call {@link Reader#getPostToken} and attempt to retry API requests that result
+  in a 400 or 401 response. Default: `true` */
+  autoPostToken?: boolean
+}
+
 export interface INewFeed {
   /** The feed's URL. Stream ID form optional. (param=`s`) */
   url: string
@@ -138,9 +151,16 @@ export default class Reader {
   private client: string
 
   /**
-   * Constructor description
+   * Instantiates a new Reader.
+   *
+   * @example
+   * ```ts
+   * import Reader from 'libseymour'
+   *
+   * const api = new Reader({ url: 'https://www.example.com/api/greader })
+   * ```
    */
-  constructor (config) {
+  constructor (config: IConfig) {
     if (!config.url) throw new Error('url is required')
 
     this.url = config.url + Reader.PATH_BASE
