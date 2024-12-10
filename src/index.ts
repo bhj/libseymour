@@ -162,10 +162,10 @@ export default class Reader {
    * ```
    */
   constructor (config: IConfig) {
-    if (!config.url) throw new Error('url is required')
+    if (!config.url?.trim()) throw new Error('url is required')
 
-    this.url = config.url + Reader.PATH_API
-    this.urlAuth = config.url + Reader.PATH_AUTH
+    this.url = config.url.replace(/\/+$/, '') + Reader.PATH_API
+    this.urlAuth = config.url.replace(/\/+$/, '') + Reader.PATH_AUTH
     this.client = config.client || Reader.CLIENT
     this.autoPostToken = config.autoPostToken ?? true
   }
