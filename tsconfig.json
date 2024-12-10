@@ -1,13 +1,12 @@
 {
   "compilerOptions": {
+	"target": "es2022",
 	"declaration": true,
 	"downlevelIteration": true,
 	"esModuleInterop": true,
-	"jsx": "react",
-	"outDir": "dist",
 	"removeComments": true,
 	"skipLibCheck": true,
-	"target": "es2022"
+	"outDir": "dist",
   },
   "include": ["src/**/*"],
 }
