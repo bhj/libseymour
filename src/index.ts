@@ -7,7 +7,7 @@
   * @inline
   */
 export interface IConfig {
-  /** The base API URL. The main (`/reader/api/0/`) and auth (`/accounts/ClientLogin) endpoint paths will be appended. */
+  /** The base API URL. The main (`/reader/api/0/`) and auth (`/accounts/ClientLogin`) endpoint paths will be appended. */
   url: string
   /** The name to identify as when making requests. Default: `libseymour`. */
   client?: string
@@ -158,7 +158,7 @@ export default class Reader {
    * ```ts
    * import Reader from 'libseymour'
    *
-   * const api = new Reader({ url: 'https://www.example.com/api/greader })
+   * const api = new Reader({ url: 'https://www.example.com/api/greader' })
    * ```
    */
   constructor (config: IConfig) {
@@ -272,7 +272,7 @@ export default class Reader {
    *
    * Note: While the original API supported multiple feeds and tags in a single request,
    * support by contemporary aggregators varies. For simplicity, this method handles one
-   * feed and (optional) tag at a time.
+   * feed with an optional user-created tag (often a "category" or "folder") at a time.
    *
    * @param feed - The feed's URL, or an object with `url`, `title` (optional) and `tag` (optional).
    * @category Feeds
@@ -295,7 +295,7 @@ export default class Reader {
   }
 
   /**
-   * Removes one or more feeds.
+   * Removes one or more feeds. (`POST /subscription/edit`)
    *
    * @param feed - A feed ID or URL, or an array of feed IDs or URLs. Stream ID form optional. (param=`s`)
    * @category Feeds
@@ -311,7 +311,7 @@ export default class Reader {
   }
 
   /**
-   * Renames one or more feeds.
+   * Renames one or more feeds. (`POST /subscription/edit`)
    *
    * @param feed - An object, or an array of objects, with a feed's `id` and new `title`.
    * @category Feeds
@@ -666,6 +666,25 @@ export default class Reader {
   }
 }
 
+/**
+ * This class helps distinguish "user" errors (such as calling a method of this library
+ * without a required parameter) from remote API errors.
+ *
+ * An `ApiError` will have a `status` property with the response HTTP status code, and
+ * a `message` property containing the response body (error message).
+ * @example
+ * ```
+ * try {
+ *   await api.getUnreadCounts()
+ * } catch (error) {
+ *   if (error instanceof ApiError) {
+ *     console.log("Caught an ApiError:")
+ *     console.log(`HTTP ${error.status}: ${error.message}`)
+ *   } else {
+ *     console.log("Some other error:", error)
+ *   }
+ * }
+ */
 export class ApiError extends Error {
   /** The HTTP status code of the response. */
   public status: number
