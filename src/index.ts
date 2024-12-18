@@ -83,12 +83,6 @@ export interface IFeedItem {
   author: string
 }
 
-export interface IFeedItemList {
-  id: string
-  updated: number
-  items: IFeedItem[]
-}
-
 export interface ITag {
   id: string
   type?: 'folder' | 'tag' | string
@@ -360,7 +354,7 @@ export default class Reader {
    * @param opts - Additional options for the request.
    * @category Items
    */
-  public async getItems (streamId: string, opts: IGetFeedItemOpts = {}): Promise<IFeedItemList> {
+  public async getItems (streamId: string, opts: IGetFeedItemOpts = {}): Promise<IFeedItem[]> {
     if (!streamId) throw new Error('Stream ID required')
 
     const params = {
@@ -378,12 +372,11 @@ export default class Reader {
       type: 'json',
     })
 
-    res.items.forEach((item: IFeedItem) => {
-      item.crawlTimeMsec = parseInt(item.crawlTimeMsec as unknown as string, 10)
-      item.timestampUsec = parseInt(item.timestampUsec as unknown as string, 10)
-    })
-
-    return res
+    return res.items.map((item: IFeedItem) => ({
+      ...item,
+      crawlTimeMsec: parseInt(item.crawlTimeMsec as unknown as string, 10),
+      timestampUsec: parseInt(item.timestampUsec as unknown as string, 10),
+    }))
   }
 
   /**
@@ -395,7 +388,7 @@ export default class Reader {
    * @param itemId - The item ID, or an array of item IDs. (param=`i`)
    * @category Items
    */
-  public async getItemsById (itemId: string | string[]): Promise<IFeedItemList> {
+  public async getItemsById (itemId: string | string[]): Promise<IFeedItem[]> {
     if (!itemId) throw new Error('item ID(s) required')
     if (!Array.isArray(itemId)) itemId = [itemId]
 
@@ -408,12 +401,11 @@ export default class Reader {
       type: 'json',
     })
 
-    res.items.forEach((item: IFeedItem) => {
-      item.crawlTimeMsec = parseInt(item.crawlTimeMsec as unknown as string, 10)
-      item.timestampUsec = parseInt(item.timestampUsec as unknown as string, 10)
-    })
-
-    return res
+    return res.items.map((item: IFeedItem) => ({
+      ...item,
+      crawlTimeMsec: parseInt(item.crawlTimeMsec as unknown as string, 10),
+      timestampUsec: parseInt(item.timestampUsec as unknown as string, 10),
+    }))
   }
 
   /**
