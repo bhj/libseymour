@@ -101,12 +101,35 @@ export interface IUserInfo {
   userProfileId?: string
 }
 
-export type OKString = Promise<'OK'>
-export type StreamType = keyof typeof Reader.STREAM_TYPES
+/**
+ * The prefixes for each type of Stream ID. This convenience object holds constants
+ * mapping the Stream ID types to their prefixes.
+ *
+ */
+export enum Streams {
+  FEED = 'feed/',
+  LABEL = 'user/-/label/',
+  STATE = 'user/-/state/com.google/',
+}
 
 /**
- * Class documentation
- *
+ * The state tags to which items can belong. This convenience object holds constants
+ * mapping the states to their Stream ID forms.
+ */
+export enum States {
+  /** All items, including read, unread and starred items. */
+  ALL = Streams.STATE + 'reading-list',
+  /** Read items only. */
+  READ = Streams.STATE + 'read',
+  /** Starred items only. */
+  STARRED = Streams.STATE + 'starred',
+}
+
+export type OKString = Promise<'OK'>
+export type StreamType = keyof typeof Streams
+export type StateType = keyof typeof States
+
+/**
  * @categoryDescription Authentication
  * Clients authenticate using API tokens. The *auth* token is used for basic
  * requests (typically HTTP GET) while the *post* token is shorter-lived (to
@@ -126,17 +149,10 @@ export type StreamType = keyof typeof Reader.STREAM_TYPES
  * as feeds/streams (typically as categories, folders, or states).
  */
 export default class Reader {
-  /** @hidden */
-  public static STREAM_TYPES = {
-    FEED: 'feed/',
-    LABEL: 'user/-/label/',
-    STATE: 'user/-/state/com.google/',
-  } as const
-
   private static CLIENT = 'libseymour'
   private static PATH_API = '/reader/api/0/'
   private static PATH_AUTH = '/accounts/ClientLogin'
-  private static STREAM_PREFIXES = Object.values(Reader.STREAM_TYPES)
+  private static STREAM_PREFIXES = Object.values(Streams)
 
   private url: string
   private urlAuth: string
@@ -545,7 +561,7 @@ export default class Reader {
   public static ensureStream (input: string, type: StreamType): string {
     if (Reader.STREAM_PREFIXES.some(p => input.startsWith(p))) return input
 
-    const prefix = Reader.STREAM_TYPES[type]
+    const prefix = Streams[type]
     if (!prefix) throw new Error('invalid stream type')
 
     return `${prefix}${input}`
