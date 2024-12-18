@@ -4,8 +4,10 @@
   "plugin": ["typedoc-plugin-merge-modules"],
   "defaultCategory": "General",
   "categoryOrder": ["General", "*"],
+  "groupOrder": ["Classes", "Interfaces", "*"],
   "disableSources": true,
   "sort": ["kind", "source-order"],
+  "kindSortOrder": ["Class", "Interface"],
   "visibilityFilters": {},
   "headings": {
       "readme": false,

@@ -32,6 +32,7 @@ export interface IEditFeed {
   title: string
 }
 
+/** @expand */
 export interface IGetFeedItemOpts {
   /** Continuation key from a previous request, used to fetch the next batch. (param=`c`) */
   continuation?: string
@@ -136,17 +137,13 @@ export type StateType = keyof typeof States
  * protect against CSRF) and used for mutations (typically HTTP POST).
  *
  * @categoryDescription Feeds
- * Feeds represent RSS/Atom URLs and contain a list of *items*. The API often
- * returns feeds in their *stream ID* form ```feed/<feed url>```, but this form
- * is optional when providing feed URLs using this library.
+ * Feeds represent RSS/Atom URLs. See [Terminology](/#terminology).
  *
  * @categoryDescription Items
- * Items represent individual articles/posts from a given *stream* (feed, tag, etc.)
+ * Items represent individual articles/posts. See [Terminology](/#terminology).
  *
  * @categoryDescription Tags
- * A tag can refer to a label, category, folder, or state such as *unread* or
- * *starred*. Tags can be applied to individual items (typically as labels) as well
- * as feeds/streams (typically as categories, folders, or states).
+ * Tags can refer to either user-created tags or states. See [Terminology](/#terminology).
  */
 export default class Reader {
   private static CLIENT = 'libseymour'
@@ -676,10 +673,11 @@ export default class Reader {
 
 /**
  * This class helps distinguish "user" errors (such as calling a method of this library
- * without a required parameter) from remote API errors.
+ * without a required parameter) from remote API errors. When a remote API error occurs
+ * (i.e., the server responds with a `4xx` or `5xx`) an `ApiError` is thrown.
  *
- * An `ApiError` will have a `status` property with the response HTTP status code, and
- * a `message` property containing the response body (error message).
+ * An `ApiError` will have a `status` property with the response's HTTP status code, and
+ * a `message` property with the response body (error message).
  * @example
  * ```
  * try {
