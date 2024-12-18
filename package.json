@@ -3,6 +3,7 @@
   "version": "0.0.0-dev.0",
   "description": "",
   "type": "module",
+  "exports": "./dist/index.js",
   "private": true,
   "repository": {
     "type": "git",
@@ -22,18 +23,18 @@
   "license": "ISC",
   "devDependencies": {
     "@eslint/js": "^9.14.0",
-    "@stylistic/eslint-plugin": "^2.10.1",
+    "@stylistic/eslint-plugin": "^2.12.1",
     "@types/eslint__js": "^8.42.3",
-    "eslint": "^9.14.0",
-    "globals": "^15.12.0",
-    "terser": "^5.36.0",
+    "eslint": "^9.17.0",
+    "globals": "^15.13.0",
+    "terser": "^5.37.0",
     "ts-loader": "^9.5.1",
-    "typedoc": "^0.27.2",
-    "typedoc-plugin-merge-modules": "^6.0.3",
+    "typedoc": "^0.27.5",
+    "typedoc-plugin-merge-modules": "^6.1.0",
     "typescript": "^5.7.2",
-    "typescript-eslint": "^8.13.0",
-    "webpack": "^5.96.1",
+    "typescript-eslint": "^8.18.1",
+    "webpack": "^5.97.1",
     "webpack-cli": "^5.1.4",
-    "webpack-dev-server": "^5.1.0"
+    "webpack-dev-server": "^5.2.0"
   }
 }
