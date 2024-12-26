@@ -4,6 +4,18 @@ Although Google Reader was discontinued in 2013, its API (also known as the GRea
 
 libseymour is a TypeScript library that aims to make interacting with this API easier, document it, and encourage the development of more web-based RSS clients.
 
+# Getting Started
+
+ ```sh
+ $ npm i libseymour
+ ```
+
+```ts
+ import Reader from 'libseymour'
+ 
+ const api = new Reader({ url: 'https://www.example.com/api/greader' })
+ ```
+ 
 ## Terminology
 
 - **Feed**: an RSS/Atom URL
@@ -20,7 +32,7 @@ Streams are lists of *items* based on some criteria, such as items from a partic
 | Stream ID | Description |
 |-----------|-------------|
 | `feed/<feed url>` | Items belonging to a specific feed, where `<feed url>` is a full RSS/Atom feed URL. Example: `feed/http://www.example.com/feed` |
-| `user/-/label/<name>` | Items having a specific user-created tag, where `<name>` is the tag’s name. Example: `user/-/label/news`<br><br>With *feeds*, tags are often referred to as a "categories" or "folders".<br>With *items*, tags often correspond to  "labels". |
+| `user/-/label/<name>` | Items having a specific user-created tag, where `<name>` is the tag’s name. Example: `user/-/label/news`<br><br>With *feeds*, tags are often referred to as "categories" or "folders".<br>With *items*, tags often correspond to  "labels". |
 | `user/-/state/com.google/<state>` | Items in a specific state. Possible states include `all`, `read`, and `starred`. Example:  `user/-/state/com.google/starred` |
 
 ## Aggregators
@@ -33,6 +45,6 @@ These self-hosted RSS/Atom feed aggregators support the GReader/Google Reader AP
 
 ## Acknowledgements and Further Reading
 
-Will Honey's [original](https://github.com/willhoney7/Google-Reader-Library) Google Reader Library
-FreshRSS's [GReader API](https://freshrss.github.io/FreshRSS/en/developers/06_GoogleReader_API.html)
-The Verge: [Who killed Google Reader?](https://www.theverge.com/23778253/google-reader-death-2013-rss-social)
+- Will Honey's [original](https://github.com/willhoney7/Google-Reader-Library) Google Reader Library
+- FreshRSS's [GReader API](https://freshrss.github.io/FreshRSS/en/developers/06_GoogleReader_API.html)
+- The Verge: [Who killed Google Reader?](https://www.theverge.com/23778253/google-reader-death-2013-rss-social)

@@ -1,13 +1,12 @@
 {
   "name": "libseymour",
   "version": "0.0.0-dev.0",
-  "description": "",
+  "description": "Library for interacting with the Google Reader/GReader API",
   "type": "module",
   "exports": "./dist/index.js",
-  "private": true,
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "https://github.com/bhj/libseymour"
   },
   "scripts": {
     "dev": "webpack serve --static src --open",
