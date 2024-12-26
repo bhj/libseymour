@@ -529,7 +529,8 @@ export default class Reader {
    * Marks all items in the specified stream as read. (`POST /mark-all-as-read`)
    *
    * @param streamId - The target Stream ID. This can generally be a feed, user-created tag, or state. (param=`s`)
-   * @param usMax - Timestamp (microseconds) for which only items older than this value should be marked as read. (param=`dest`)
+   * @param usMax - Timestamp (microseconds). Only items with a timestamp less than (older) or equal to
+   * this value will be marked as read. (param=`ts`)
    */
   public async setAllRead (streamId: string, usMax: number): Promise<OKString> {
     if (!Reader.STREAM_PREFIXES.some(p => streamId.startsWith(p))) throw new Error(`invalid Stream ID (got '${streamId}')`)
