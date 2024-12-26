@@ -137,13 +137,13 @@ export type StateType = keyof typeof States
  * protect against CSRF) and used for mutations (typically HTTP POST).
  *
  * @categoryDescription Feeds
- * Feeds represent RSS/Atom URLs. See [Terminology](/#terminology).
+ * Feeds represent RSS/Atom URLs. See [Terminology](../#terminology).
  *
  * @categoryDescription Items
- * Items represent individual articles/posts. See [Terminology](/#terminology).
+ * Items represent individual articles/posts. See [Terminology](../#terminology).
  *
  * @categoryDescription Tags
- * Tags can refer to either user-created tags or states. See [Terminology](/#terminology).
+ * Tags can refer to either user-created tags or states. See [Terminology](../#terminology).
  */
 export default class Reader {
   private static CLIENT = 'libseymour'
