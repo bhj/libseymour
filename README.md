@@ -2,7 +2,13 @@
 
 Although Google Reader was discontinued in 2013, its API (also known as the GReader API) remains a de facto standard for interoperability among RSS/Atom feed aggregators and clients.
 
-libseymour is a TypeScript library that aims to make interacting with this API easier, document it, and encourage the development of more web-based RSS clients. [See the full documentation](https://bhj.github.io/libseymour/modules.html).
+**libseymour** is a TypeScript library that aims to make interacting with the API easier, document it, and encourage the development of more web-based RSS clients. [See the full documentation](https://bhj.github.io/libseymour/modules.html).
+
+- Abstracts the API to simple promise-based getters and setters
+- Automatically handles POST tokens (used for mutation requests)
+- Automatically converts timestamps contained in strings to numbers
+- Provides inline documentation via TypeScript
+- ESM package with zero dependencies
 
 ## Getting Started
 
