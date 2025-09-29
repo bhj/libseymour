@@ -8,8 +8,9 @@
   "files": ["dist/*", "CHANGELOG.md"],
   "repository": {
     "type": "git",
-    "url": "https://github.com/bhj/libseymour"
+    "url": "git+https://github.com/bhj/libseymour.git"
   },
+  "homepage": "https://bhj.github.io/libseymour",
   "scripts": {
     "dev": "webpack serve --static src --open",
     "docs:build": "typedoc",
